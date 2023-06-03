@@ -157,17 +157,14 @@ class Logify
     
     private function handleMovePlayer($gmRoleId)
     {
-        preg_match('/将玩家(\d+)移动过来\((.+)\)/', $this->logLine, $matches);
-        if (count($matches) != 3) {
+        if(!preg_match('/将玩家(\d+)移动过来\((.+)\)/', $this->logLine, $matches))
             return;
-        }
     
-        $playerId = $matches[1];
         $position = explode(',', $matches[2]);
     
         $fields = [
             'gmRoleId' => $gmRoleId,
-            'playerId' => $playerId,
+            'playerId' => $matches[1],
             'positionX' => floatval($position[0]),
             'positionY' => floatval($position[1]),
             'positionZ' => floatval($position[2]),
