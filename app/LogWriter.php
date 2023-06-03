@@ -4,7 +4,9 @@ namespace App;
 
 class LogWriter
 {
-    public static function logEvent($fields, $messageKey, $outputFilename)
+    private $owner;
+
+    public function logEvent($fields, $messageKey, $outputFilename)
     {
         $message = Config::getMessage($messageKey);
         $formattedMessage = sprintf($message, ...array_values($fields));
@@ -15,19 +17,32 @@ class LogWriter
         self::appendToLogFile($outputFilename, $fields);
     }
 
-    public static function appendToLogFile($filename, $data)
+    public function appendToLogFile($filename, $data)
     {
-        $filePath = "../logs/{$filename}";
-        $existingData = [];
+        if (!$this->owner)
+            throw new \Exception('Owner not set when trying to write to '. $filename);
+    
+        $ownerFolder = "../logs/{$this->owner}";
 
+        if (!is_dir($ownerFolder))
+            mkdir($ownerFolder, 0777, true);
+    
+        $filePath = "{$ownerFolder}/{$filename}";
+        $existingData = [];
+    
         if (file_exists($filePath)) {
             $fileContents = file_get_contents($filePath);
             if (!empty($fileContents)) {
                 $existingData = json_decode($fileContents, true);
             }
         }
-
+    
         $existingData[] = $data;
         file_put_contents($filePath, json_encode($existingData, JSON_PRETTY_PRINT));
+    }
+    
+    public function setOwner(int $roleId)
+    {
+        $this->owner = $roleId;
     }
 }

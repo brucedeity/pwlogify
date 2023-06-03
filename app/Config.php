@@ -21,12 +21,14 @@ class Config
             '得到金钱' => 'processGetMoney',
             '拣起' => 'processPickupItem',
             '在百宝阁购买' => 'processPurchaseFromAuction',
+            '升级到' => 'processUserLevelUp',
         ];
     }
 
     public static function getMessages(): array
     {
         return [
+            'processSendMail' => 'Timestamp: %d, User %d sent mail to user %d. Mail ID: %d. Mail size: %d. Money sent: %d. Item ID: %d. Item count: %d. Mail position: %d.',
             'roleLogout' => 'Role ID %d from user %d logged out',
             'roleLogin' => 'Role ID %d from user %d logged in',
             'dropItem' => 'User %d discarded %d of item %d',
@@ -43,6 +45,7 @@ class Config
             'processGiveUpTask' => 'Role ID %d gave up task with task ID %d (type %d)',
             'receiveItemFromTask' => 'Role ID %d received item with item ID %d (count %d) from task with task ID %d (type %d)',
             'deliverByAwardData' => 'Role ID %d completed task with task ID %d (type %d), success = %d, gold = %d, exp = %d, sp = %d, reputation = %d',
+            'userLevelUp' => 'User %d leveled up to level %d. Current money: %d. Playtime: %s.',
         ];
     }
 
