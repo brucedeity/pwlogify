@@ -7,6 +7,8 @@ class Config
     public static function getLogPatterns(): array
     {
         return [
+            'chat' => 'processChat',
+            'obtain title' => 'processObtainTitle',
             'formatlog:sendmail' => 'processSendMail',
             'formatlog:rolelogin' => 'processRoleLogin',
             'formatlog:rolelogout' => 'processRoleLogout',
@@ -15,6 +17,7 @@ class Config
             'formatlog:die' => 'processRoleDie',
             '丢弃包裹' => 'processDropItem',
             '丢弃装备' => 'processDropEquipment',
+            '执行了内部命令' => 'processGMCommand',
             '拣起金钱' => 'processPickupMoney',
             '丢弃金钱' => 'processDiscardMoney',
             '从NPC购买了' => 'processBuyItem',
@@ -33,6 +36,8 @@ class Config
     public static function getMessages(): array
     {
         return [
+            'obtainTitle' => 'The Role ID %d obtained the title ID %d at time %d.',
+            'gmCommand' => 'The GM with Role ID %d executed internal command %d.',
             'craftItem' => 'The Role ID %d crafted %d unit(s) of the item ID: %d using recipe ID: %d. Consumed materials: %s.',
             'roleDie' => 'Role %d died. Death type: %d. Attacker: %d.',
             'spendMoney' => 'The Role ID %d spent %d money.',
@@ -50,11 +55,11 @@ class Config
             'trade' => 'Role %d traded with role %d. Money exchanged: %d from role %d and %d from role %d. Role %d traded %s items. And Role %d traded %s items.',
             'dropEquipment' => 'The Role ID %d discarded equipment %d',
             'pickupItem' => 'The Role ID %d picked up %d unit(s) of item %d (discarded by role ID %d)',
-            'purchaseFromAuction' => 'Role ID %d purchased %d item(s) from gshop, spent %d unit(s) of cash, remaining balance: %d',
-            'processStartTask' => 'Role ID %d started the task ID %d (type %d)',
-            'processGiveUpTask' => 'Role ID %d gave up the task ID %d (type %d)',
-            'receiveItemFromTask' => 'Role ID %d the item ID %d (%d unit(s)) from the task ID %d (type %d)',
-            'deliverByAwardData' => 'Role ID %d completed the task ID %d (type %d) msg: %s, success = %d, gold = %d, exp = %d, sp = %d, reputation = %d',
+            'purchaseFromAuction' => 'The Role ID %d purchased %d item(s) from gshop, spent %d unit(s) of cash, remaining balance: %d',
+            'processStartTask' => 'The Role ID %d started the task ID %d (type %d)',
+            'processGiveUpTask' => 'The Role ID %d gave up the task ID %d (type %d)',
+            'receiveItemFromTask' => 'The Role ID %d received the item ID %d (%d unit(s)) (type %d) from the task ID %d',
+            'deliverByAwardData' => 'The Role ID %d completed the task ID %d (type %d) msg: %s, success = %d, gold = %d, exp = %d, sp = %d, reputation = %d',
             'levelUp' => 'The Role ID %d leveled up to level %d. Current money: %s. Playtime: %s.',
         ];
     }

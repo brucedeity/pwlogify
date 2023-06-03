@@ -8,13 +8,16 @@ class LogWriter
 
     public function logEvent($fields, $messageKey, $outputFilename)
     {
-        $message = Config::getMessage($messageKey);
-        $formattedMessage = sprintf($message, ...array_values($fields));
+        if ($messageKey) {
+            $message = Config::getMessage($messageKey);
+            $formattedMessage = sprintf($message, ...array_values($fields));
+    
+            $fields['message'] = $formattedMessage;
+        }
         
-        $fields['message'] = $formattedMessage;
         $fields['timestamp'] = date('Y-m-d H:i:s');
-        
-        self::appendToLogFile($outputFilename, $fields);
+    
+        $this->appendToLogFile($outputFilename, $fields);
     }
 
     public function appendToLogFile($filename, $data)

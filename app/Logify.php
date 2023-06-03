@@ -216,16 +216,50 @@ class Logify
         $this->logWriter->logEvent($fields, 'levelUp', 'levelup.json');
     }
 
+    private function processChat()
+    {
+        if (preg_match('/(Whisper|Chat): src=(-?\d+) (dst=(\d+) )?chl=(\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
+            $chatType = $matches[1];
+            $srcRoleId = $matches[2];
+            $dstRoleId = $matches[1] === 'Whisper' ? $matches[4] : null;
+            $channel = $this->getChannelName($matches[5]);
+            $message = $this->decodeBase64Message($matches[6]);
+
+            $fields = [
+                'chatType' => $chatType,
+                'srcRoleId' => $srcRoleId,
+                'dstRoleId' => $dstRoleId,
+                'channel' => $channel,
+                'message' => $message,
+            ];
+
+            $this->logWriter->setOwner($fields['srcRoleId']);
+            $this->logWriter->logEvent($fields, null, 'chat.json');
+        }
+    }
+
+    private function getChannelName($channelId)
+    {
+        $channelNames = [
+            0 => 'Common',
+            1 => 'World',
+            2 => 'Squad',
+            7 => 'Trade'
+        ];
+
+        return $channelNames[$channelId] ?? 'unknown';
+    }
+
+    private function decodeBase64Message($base64Message)
+    {
+        $decodedMessage = base64_decode($base64Message);
+        return mb_convert_encoding($decodedMessage, 'UTF-8', 'UTF-16LE');
+    }
+
     private function processCraftItem()
     {
-        if (!preg_match('/用户(\d+)制造了(\d+)个(\d+), 配方(\d+),/', $this->logLine, $matches)) {
+        if (!preg_match('/用户(\d+)制造了(\d+)个(\d+), 配方(\d+),/', $this->logLine, $matches))
             return;
-        }
-    
-        $roleId = $matches[1];
-        $itemCount = $matches[2];
-        $itemId = $matches[3];
-        $recipeId = $matches[4];
     
         $materialsString = substr($this->logLine, strpos($this->logLine, "消耗材料"));
         $materialMatches = [];
@@ -236,18 +270,18 @@ class Logify
             $materials[] = "Material {$match[2]}, Quantity {$match[3]}";
         }
         $materialsString = implode("; ", $materials);
-    
+
         $fields = [
-            'roleId' => $roleId,
-            'itemCount' => $itemCount,
-            'itemId' => $itemId,
-            'recipeId' => $recipeId,
+            'roleId' => $matches[1],
+            'itemCount' => $matches[2],
+            'itemId' => $matches[3],
+            'recipeId' => $matches[4],
             'materials' => $materialsString
         ];
     
         $this->logWriter->setOwner($fields['roleId']);
         $this->logWriter->logEvent($fields, 'craftItem', 'craftItem.json');
-    }       
+    }
     
     private function processPickupItem()
     {
@@ -279,6 +313,35 @@ class Logify
 
         $this->logWriter->setOwner($fields['roleId']);
         $this->logWriter->logEvent($fields, 'purchaseFromAuction', 'gshopBuy.json');
+    }
+
+    private function processGMCommand()
+    {
+        if (!preg_match('/GM:用户(\d+)执行了内部命令(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'roleId' => $matches[1],
+            'commandId' => $matches[2],
+        ];
+
+        $this->logWriter->setOwner($fields['roleId']);
+        $this->logWriter->logEvent($fields, 'gmCommand', 'gmCommand.json');
+    }
+
+    private function processObtainTitle()
+    {
+        if (!preg_match('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'roleId' => $matches[1],
+            'titleId' => $matches[2],
+            'time' => $matches[3]
+        ];
+
+        $this->logWriter->setOwner($fields['roleId']);
+        $this->logWriter->logEvent($fields, 'obtainTitle', 'obtainTitle.json');
     }
 
     private function processTask()
@@ -330,7 +393,7 @@ class Logify
     {
         $fields = $this->getFormatLogMatches();
     
-        if (!isset($fields['roleId']) OR !isset($fields['roleid']))
+        if (!isset($fields['roleid']))
             return;
 
         $this->logWriter->setOwner($fields['roleid']);
@@ -341,7 +404,7 @@ class Logify
     {
         $fields = $this->getFormatLogMatches();
     
-        if (!isset($fields['roleId']) OR !isset($fields['roleid']))
+        if (!isset($fields['roleid']))
             return;
 
         $this->logWriter->setOwner($fields['roleid']);
