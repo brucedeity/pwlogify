@@ -32,12 +32,22 @@ class Config
             '技能' => 'processSkillLevelUp',
             '制造了' => 'processCraftItem',
             '采集得到' => 'processMine',
+            '孵化了宠物蛋' => 'processPetEggHatch',
+            '还原了宠物蛋' => 'processPetEggRestore',
         ];
     }
 
     public static function getMessages(): array
     {
         return [
+            'petHatch' => 'User %d hatched pet egg %d.',
+            'petRestore' => 'User %d restored pet egg %d.',
+            'startActivity' => 'GM %d started the activity %d.',
+            'stopActivity' => 'GM %d stopped the activity %d.',
+            'toggleInvincibility' => 'GM %d toggled invincibility state. Current state => %d.',
+            'toggleInvisibility' => 'GM %d toggled invisibility state. Current state => %d.',
+            'dropMonsterSpawner' => 'GM %d dropped monster spawner with ID => %d.',
+            'playerDisconnect' => 'Player %d was disconnected. Disconnect type => %d.',
             'activateTrigger' => 'GM %d activated the trigger %d.',
             'cancelTrigger' => 'GM %d canceled the trigger %d.',
             'createMonster' => 'GM %d created %d monster(s) of type %d and ID %d,',

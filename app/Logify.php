@@ -23,9 +23,6 @@ class Logify
             if (!strpos($this->logLine, $pattern) !== false)
                 continue;
 
-            echo "Processing log line: {$this->logLine}\n";
-
-            echo 'calling method: ' . $methodName . "\n";
             $this->$methodName();
         }
     }
@@ -53,23 +50,108 @@ class Logify
         $gmActionsMethods = [
             '创建了' => 'handleCreateMonster',
             '试图移动到玩家' => 'handleAttemptMoveToPlayer',
-            '移动到玩家' => 'handleMoveToPlayer',
             '将玩家' => 'handleMovePlayer',
             '激活了生成区域' => 'handleActivateTrigger',
             '取消了生成区域' => 'handleCancelTrigger',
+            '开启活动' => 'handleStartActivity',
+            '关闭活动' => 'handleStopActivity',
+            '切换了无敌状态' => 'handleToggleInvincibility',
+            '切换了隐身状态' => 'handleToggleInvisibility',
+            '丢出了怪物生成器' => 'handleDropMonsterSpawner',
+            '用户断线了' => 'handlePlayerDisconnect',
         ];
 
         foreach ($gmActionsMethods as $pattern => $methodName) {
             if (!strpos($this->logLine, $pattern) !== false)
-            {
-                echo "Pattern not found: {$pattern}\n";
-                continue;
-            }
-            
-            echo "Pattern found: {$pattern}, calling method {$methodName}\n";
-            $this->$methodName($matches[1]);
+                $this->$methodName($matches[1]);
         }
     }
+
+    private function handleStartActivity($gmRoleId)
+    {
+        if (!preg_match('/开启活动(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'activityId' => $matches[1],
+        ];
+
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'startActivity', 'gm_startActivity.json');
+    }
+
+    private function handleStopActivity($gmRoleId)
+    {
+        if (!preg_match('/关闭活动(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'activityId' => $matches[1],
+        ];
+
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'stopActivity', 'gm_stopActivity.json');
+    }
+
+    private function handleToggleInvincibility($gmRoleId)
+    {
+        if (!preg_match('/切换了无敌状态\(([^)]+)\)/', $this->logLine, $matches))
+            return;
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'state' => $matches[1] == '正常' ? 0 : 1,
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'toggleInvincibility', 'gm_toggleInvincibility.json');
+    }    
+
+    private function handleToggleInvisibility($gmRoleId)
+    {
+        if (!preg_match('/切换了隐身状态\(([^)]+)\)/', $this->logLine, $matches))
+            return;
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'state' => $matches[1] == '现形' ? 0 : 1,
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'toggleInvisibility', 'gm_toggleInvisibility.json');
+    }    
+
+    private function handleDropMonsterSpawner($gmRoleId)
+    {
+        if (!preg_match('/丢出了怪物生成器(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'monsterSpawnerId' => $matches[1],
+        ];
+
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'dropMonsterSpawner', 'gm_dropMonsterSpawner.json');
+    }
+
+    private function handlePlayerDisconnect($gmRoleId)
+    {
+        if (!preg_match('/用户断线了\((\d+)\):(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'disconnectType' => $matches[1],
+            'playerId' => $matches[2],
+        ];
+
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'playerDisconnect', 'gm_playerDisconnect.json');
+    }
+
 
     private function handleActivateTrigger($gmRoleId)
     {
@@ -341,8 +423,37 @@ class Logify
         ];
 
         $this->logWriter->setOwner($fields['roleId']);
-        $this->logWriter->logEvent($fields, 'getMoney', 'getmoney.json');
+        $this->logWriter->logEvent($fields, 'getMoney', 'getMoney.json');
     }
+
+    private function processPetEggHatch()
+    {
+        if (!preg_match('/用户(\d+)孵化了宠物蛋(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'userId' => $matches[1],
+            'petEggId' => $matches[2]
+        ];
+
+        $this->logWriter->setOwner($fields['userId']);
+        $this->logWriter->logEvent($fields, 'petHatch', 'petHatch.json');
+    }
+
+    private function processPetEggRestore()
+    {
+        if (!preg_match('/用户(\d+)还原了宠物蛋(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'userId' => $matches[1],
+            'petEggId' => $matches[2]
+        ];
+
+        $this->logWriter->setOwner($fields['userId']);
+        $this->logWriter->logEvent($fields, 'petRestore', 'petRestore.json');
+    }
+
 
     private function processLevelUp()
     {
@@ -612,8 +723,7 @@ class Logify
 }
 
 if ($argc > 1) {
-    // echo "Processing log line: {$argv[1]}\n";
-    $logify = new Logify();
+    $logify = new Logify;
     $logify->setLogLine($argv[1]);
     $logify->processLogLine();
 }

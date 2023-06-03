@@ -1,5 +1,5 @@
-# Logify
-A PHP-based logging utility that captures and processes logs, from a Perfect World Server.
+# PW Logify
+This is a PHP-based logging utility that captures and processes logs from a Perfect World Server.
 
 ## Description
 Logify processes log entries, such as Chat, GM Actions, Item Crafting, Item Pickup, Auction Purchases, GM Commands, Title Acquisitions, Task Processings, Mail Sendings, and Player Login/Logout actions.
