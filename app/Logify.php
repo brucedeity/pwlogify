@@ -527,7 +527,6 @@ class Logify
         $this->logWriter->logEvent($fields, 'petRestore', 'petRestore.json');
     }
 
-
     private function processLevelUp()
     {
         if (!preg_match('/用户(\d+)升级到(\d+)级金钱(\d+),游戏时间(\d+:\d+:\d+)/', $this->logLine, $matches))
@@ -546,25 +545,26 @@ class Logify
 
     private function processChat()
     {
-        if (preg_match('/(Whisper|Chat): src=(-?\d+) (dst=(\d+) )?chl=(\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
-            $chatType = $matches[1];
-            $srcRoleId = $matches[2];
-            $dstRoleId = $matches[1] === 'Whisper' ? $matches[4] : null;
-            $channel = $this->getChannelName($matches[5]);
-            $message = $this->decodeBase64Message($matches[6]);
-
+        $fields = [];
+        if (preg_match('/Chat: src=(-?\d+) chl=(\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
             $fields = [
-                'chatType' => $chatType,
-                'srcRoleId' => $srcRoleId,
-                'dstRoleId' => $dstRoleId,
-                'channel' => $channel,
-                'message' => $message,
+                'srcRoleId' => $matches[1],
+                'channel' => $this->getChannelName($matches[2]),
+                'message' => $this->decodeBase64Message($matches[3]),
             ];
-
-            $this->logWriter->setOwner($fields['srcRoleId']);
-            $this->logWriter->logEvent($fields, null, 'chat.json');
+        } elseif (preg_match('/Whisper: src=(-?\d+) dst=(-?\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
+            $fields = [
+                'srcRoleId' => $matches[1],
+                'dstRoleId' => $matches[2],
+                'channel' => 'Whisper',
+                'message' => $this->decodeBase64Message($matches[3]),
+            ];
         }
+    
+        $this->logWriter->setOwner($fields['srcRoleId']);
+        $this->logWriter->logEvent($fields, null, 'chat.json');
     }
+    
 
     private function getChannelName($channelId)
     {

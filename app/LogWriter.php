@@ -18,7 +18,7 @@ class LogWriter
         return $message;
     }
 
-    public function logEvent(array $fields, string $messageKey, string $outputFilename)
+    public function logEvent(array $fields, $messageKey, string $outputFilename)
     {
         if ($messageKey)
             $message = $this->buildMessageAndTimestamp($fields, $messageKey);
