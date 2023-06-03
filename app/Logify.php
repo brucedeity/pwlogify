@@ -216,6 +216,39 @@ class Logify
         $this->logWriter->logEvent($fields, 'levelUp', 'levelup.json');
     }
 
+    private function processCraftItem()
+    {
+        if (!preg_match('/用户(\d+)制造了(\d+)个(\d+), 配方(\d+),/', $this->logLine, $matches)) {
+            return;
+        }
+    
+        $roleId = $matches[1];
+        $itemCount = $matches[2];
+        $itemId = $matches[3];
+        $recipeId = $matches[4];
+    
+        $materialsString = substr($this->logLine, strpos($this->logLine, "消耗材料"));
+        $materialMatches = [];
+        preg_match_all('/(消耗材料|材料)(\d+), 数量(\d+);/', $materialsString, $materialMatches, PREG_SET_ORDER);
+    
+        $materials = [];
+        foreach($materialMatches as $match) {
+            $materials[] = "Material {$match[2]}, Quantity {$match[3]}";
+        }
+        $materialsString = implode("; ", $materials);
+    
+        $fields = [
+            'roleId' => $roleId,
+            'itemCount' => $itemCount,
+            'itemId' => $itemId,
+            'recipeId' => $recipeId,
+            'materials' => $materialsString
+        ];
+    
+        $this->logWriter->setOwner($fields['roleId']);
+        $this->logWriter->logEvent($fields, 'craftItem', 'craftItem.json');
+    }       
+    
     private function processPickupItem()
     {
         if (!preg_match('/用户(\d+)拣起(\d+)个(\d+)\[用户(\d+)丢弃\]/', $this->logLine, $matches))

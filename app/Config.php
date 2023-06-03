@@ -26,12 +26,14 @@ class Config
             '花掉金钱' => 'processSpendMoney',
             '消耗了sp' => 'processSpConsume',
             '技能' => 'processSkillLevelUp',
+            '制造了' => 'processCraftItem',
         ];
     }
 
     public static function getMessages(): array
     {
         return [
+            'craftItem' => 'The Role ID %d crafted %d unit(s) of the item ID: %d using recipe ID: %d. Consumed materials: %s.',
             'roleDie' => 'Role %d died. Death type: %d. Attacker: %d.',
             'spendMoney' => 'The Role ID %d spent %d money.',
             'spConsume' => 'The Role ID %d consumed %d sp.',
