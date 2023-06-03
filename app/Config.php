@@ -7,6 +7,7 @@ class Config
     public static function getLogPatterns(): array
     {
         return [
+            'GM:' => 'processGMActions',
             'chat' => 'processChat',
             'obtain title' => 'processObtainTitle',
             'formatlog:sendmail' => 'processSendMail',
@@ -30,12 +31,20 @@ class Config
             '消耗了sp' => 'processSpConsume',
             '技能' => 'processSkillLevelUp',
             '制造了' => 'processCraftItem',
+            '采集得到' => 'processMine',
         ];
     }
 
     public static function getMessages(): array
     {
         return [
+            'activateTrigger' => 'GM %d activated the trigger %d.',
+            'cancelTrigger' => 'GM %d canceled the trigger %d.',
+            'createMonster' => 'GM %d created %d monster(s) of type %d and ID %d,',
+            'attemptMoveToPlayer' => 'GM %d attempted to move to player %d.',
+            'moveToPlayer' => 'GM %d moved to player %d at position (%f, %f, %f).',
+            'movePlayer' => 'GM %d moved player %d to position (%f, %f, %f).',
+            'mine' => 'The Role ID %d mined and obtained %d unit(s) of item ID %d.',
             'obtainTitle' => 'The Role ID %d obtained the title ID %d at time %d.',
             'gmCommand' => 'The GM with Role ID %d executed internal command %d.',
             'craftItem' => 'The Role ID %d crafted %d unit(s) of the item ID: %d using recipe ID: %d. Consumed materials: %s.',

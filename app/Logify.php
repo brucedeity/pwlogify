@@ -44,6 +44,153 @@ class Logify
     
         return $fields;
     }
+    
+    private function processGMActions()
+    {
+        if (!preg_match('/GM:(\d+)/', $this->logLine, $matches))
+            return;
+
+        $gmActionsMethods = [
+            '创建了' => 'handleCreateMonster',
+            '试图移动到玩家' => 'handleAttemptMoveToPlayer',
+            '移动到玩家' => 'handleMoveToPlayer',
+            '将玩家' => 'handleMovePlayer',
+            '激活了生成区域' => 'handleActivateTrigger',
+            '取消了生成区域' => 'handleCancelTrigger',
+        ];
+
+        foreach ($gmActionsMethods as $pattern => $methodName) {
+            if (!strpos($this->logLine, $pattern) !== false)
+            {
+                echo "Pattern not found: {$pattern}\n";
+                continue;
+            }
+            
+            echo "Pattern found: {$pattern}, calling method {$methodName}\n";
+            $this->$methodName($matches[1]);
+        }
+    }
+
+    private function handleActivateTrigger($gmRoleId)
+    {
+        if (!preg_match('/激活了生成区域(\d+)/', $this->logLine, $matches))
+            return;
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'triggerId' => $matches[1],
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'activateTrigger', 'gm_activateTrigger.json');
+    }
+    
+    private function handleCancelTrigger($gmRoleId)
+    {
+        if (!preg_match('/取消了生成区域(\d+)/', $this->logLine, $matches))
+            return;
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'triggerId' => $matches[1],
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'cancelTrigger', 'gm_cancelTrigger.json');
+    }
+    
+    private function handleCreateMonster($gmRoleId)
+    {
+        if (!preg_match('/创建了(\d+)个怪物(\d+)\((\d+)\)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'monsterCount' => $matches[1],
+            'monsterType' => $matches[2],
+            'monsterId' => $matches[3],
+        ];
+
+        $this->logWriter->setOwner($gmRoleId);
+        $this->logWriter->logEvent($fields, 'createMonster', 'gm_createMonster.json');
+    }
+    
+    private function handleAttemptMoveToPlayer($gmRoleId)
+    {
+        preg_match('/试图移动到玩家(\d+)/', $this->logLine, $matches);
+        if (count($matches) != 2) {
+            return;
+        }
+    
+        $playerId = $matches[1];
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'playerId' => $playerId,
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'attemptMoveToPlayer', 'gm_attemptMoveToPlayer.json');
+    }
+    
+    private function handleMoveToPlayer($gmRoleId)
+    {
+        preg_match('/移动到玩家(\d+) at position \((.+)\)/', $this->logLine, $matches);
+        if (count($matches) != 3) {
+            return;
+        }
+    
+        $playerId = $matches[1];
+        $position = explode(',', $matches[2]);
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'playerId' => $playerId,
+            'positionX' => floatval($position[0]),
+            'positionY' => floatval($position[1]),
+            'positionZ' => floatval($position[2]),
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'moveToPlayer', 'gm_moveToPlayer.json');
+    }
+    
+    private function handleMovePlayer($gmRoleId)
+    {
+        preg_match('/将玩家(\d+)移动过来\((.+)\)/', $this->logLine, $matches);
+        if (count($matches) != 3) {
+            return;
+        }
+    
+        $playerId = $matches[1];
+        $position = explode(',', $matches[2]);
+    
+        $fields = [
+            'gmRoleId' => $gmRoleId,
+            'playerId' => $playerId,
+            'positionX' => floatval($position[0]),
+            'positionY' => floatval($position[1]),
+            'positionZ' => floatval($position[2]),
+        ];
+    
+        $this->logWriter->setOwner($fields['gmRoleId']);
+        $this->logWriter->logEvent($fields, 'movePlayer', 'gm_movePlayer.json');
+    }    
+
+    private function processMine()
+    {
+        if (!preg_match('/用户(\d+)采集得到(\d+)个(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'roleId' => $matches[1],
+            'itemCount' => $matches[2],
+            'itemId' => $matches[3],
+        ];
+
+        $this->logWriter->setOwner($fields['roleId']);
+        $this->logWriter->logEvent($fields, 'mine', 'mine.json');
+    }
 
     private function processDropItem()
     {
@@ -244,7 +391,8 @@ class Logify
             0 => 'Common',
             1 => 'World',
             2 => 'Squad',
-            7 => 'Trade'
+            7 => 'Trade',
+            9 => 'System'
         ];
 
         return $channelNames[$channelId] ?? 'unknown';
@@ -326,7 +474,7 @@ class Logify
         ];
 
         $this->logWriter->setOwner($fields['roleId']);
-        $this->logWriter->logEvent($fields, 'gmCommand', 'gmCommand.json');
+        $this->logWriter->logEvent($fields, 'gmCommand', 'gm_executeCommand.json');
     }
 
     private function processObtainTitle()
@@ -441,7 +589,6 @@ class Logify
         );
 
         $fields['message'] = $message;
-        $fields['timestamp'] = date('Y-m-d H:i:s');
         
         $this->logWriter->appendToLogFile('trade.json', $fields);
     }
