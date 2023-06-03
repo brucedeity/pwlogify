@@ -16,6 +16,9 @@ class Config
             'formatlog:trade' => 'processTrade',
             'formatlog:task' => 'processTask',
             'formatlog:die' => 'processRoleDie',
+            'formatlog:faction' => 'processFactionActions',
+            '建立了队伍' => 'processCreateParty',
+            '成为队员' => 'processJoinParty',
             '丢弃包裹' => 'processDropItem',
             '丢弃装备' => 'processDropEquipment',
             '执行了内部命令' => 'processGMCommand',
@@ -34,14 +37,21 @@ class Config
             '采集得到' => 'processMine',
             '孵化了宠物蛋' => 'processPetEggHatch',
             '还原了宠物蛋' => 'processPetEggRestore',
+            '组队拣起用户' => 'pickupTeamMoney'
+
         ];
     }
 
     public static function getMessages(): array
     {
         return [
-            'petHatch' => 'User %d hatched pet egg %d.',
-            'petRestore' => 'User %d restored pet egg %d.',
+            'pickupTeamMoney' => 'Role ID %d picked up money (%d) dropped by Role ID %d they both were in a Party.',
+            'deleteFaction' => '(Action type: %s) The faction of ID %d was deleted.',
+            'createFaction' => '(Action type: %s) The Role ID %d just created a new faction (faction ID: %d).',
+            'createParty' => 'The Role ID %d created team with ID %d (Type: %d)',
+            'joinParty' => 'The Role ID %d joined team with ID %d as member %d',
+            'petHatch' => 'The Role ID %d hatched the pet egg ID %d.',
+            'petRestore' => 'The Role ID %d restored a pet and received the pet egg ID %d.',
             'startActivity' => 'GM %d started the activity %d.',
             'stopActivity' => 'GM %d stopped the activity %d.',
             'toggleInvincibility' => 'GM %d toggled invincibility state. Current state => %d.',
@@ -72,7 +82,7 @@ class Config
             'sellItem' => 'The Role ID %d sold %d unit(s) of the item ID: %d to a NPC',
             'getMoney' => 'The Role ID %d received %d money',
             'trade' => 'Role %d traded with role %d. Money exchanged: %d from role %d and %d from role %d. Role %d traded %s items. And Role %d traded %s items.',
-            'dropEquipment' => 'The Role ID %d discarded equipment %d',
+            'dropEquipment' => 'The Role ID %d discarded his equipment of ID %d',
             'pickupItem' => 'The Role ID %d picked up %d unit(s) of item %d (discarded by role ID %d)',
             'purchaseFromAuction' => 'The Role ID %d purchased %d item(s) from gshop, spent %d unit(s) of cash, remaining balance: %d',
             'processStartTask' => 'The Role ID %d started the task ID %d (type %d)',

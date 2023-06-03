@@ -314,6 +314,36 @@ class Logify
         $this->logWriter->logEvent($fields, 'discardMoney', 'discardmoney.json');
     }
 
+    private function processCreateParty()
+    {
+        if (!preg_match('/用户(\d+)建立了队伍\((\d+),(\d+)\)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'creatorId' => $matches[1],
+            'teamId' => $matches[2],
+            'teamType' => $matches[3],
+        ];
+
+        $this->logWriter->setOwner($fields['creatorId']);
+        $this->logWriter->logEvent($fields, 'createParty', 'createParty.json');
+    }
+
+    private function processjoinParty()
+    {
+        if (!preg_match('/用户(\d+)成为队员\((\d+),(\d+)\)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'userId' => $matches[1],
+            'teamId' => $matches[2],
+            'teamMemberId' => $matches[3],
+        ];
+
+        $this->logWriter->setOwner($fields['userId']);
+        $this->logWriter->logEvent($fields, 'joinParty', 'joinParty.json');
+    }
+
     private function processSpendMoney()
     {
         if (!preg_match('/用户(\d+)花掉金钱(\d+)/', $this->logLine, $matches))
@@ -412,6 +442,34 @@ class Logify
         $this->logWriter->logEvent($fields, 'roleDie', 'die.json');
     }
 
+    public function processFactionActions()
+    {
+        $factionActions = [
+            'create' => 'processCreateFaction',
+            'delete' => 'processDeleteFaction',
+        ];
+
+        foreach ($factionActions as $pattern => $methodName) {
+            if (strpos($this->logLine, $pattern) !== false)
+                $this->$methodName();
+        }
+    }
+
+    public function processCreateFaction()
+    {
+        $fields = $this->getFormatLogMatches();
+
+        $this->logWriter->setOwner($fields['roleid']);
+        $this->logWriter->logEvent($fields, 'createFaction', 'createFaction.json');
+    }
+
+    public function processDeleteFaction()
+    {
+        $fields = $this->getFormatLogMatches();
+
+        $this->logWriter->logGeneralInfo('deleteFaction', $fields);
+    }
+
     private function processGetMoney()
     {
         if (!preg_match('/用户(\d+).*得到金钱(\d+)/', $this->logLine, $matches))
@@ -424,6 +482,21 @@ class Logify
 
         $this->logWriter->setOwner($fields['roleId']);
         $this->logWriter->logEvent($fields, 'getMoney', 'getMoney.json');
+    }
+
+    private function pickupTeamMoney()
+    {
+        if (!preg_match('/用户(\d+)组队拣起用户(\d+)丢弃的金钱(\d+)/', $this->logLine, $matches))
+            return;
+
+        $fields = [
+            'roleId' => $matches[1],
+            'pickupRoleId' => $matches[2],
+            'amount' => $matches[3]
+        ];
+
+        $this->logWriter->setOwner($fields['roleId']);
+        $this->logWriter->logEvent($fields, 'pickupTeamMoney', 'pickupTeamMoney.json');
     }
 
     private function processPetEggHatch()
@@ -547,7 +620,7 @@ class Logify
         $fields = [
             'pickup_userid' => $matches[1],
             'itemcount' => $matches[2],
-            'itemcode' => $matches[3],
+            'itemId' => $matches[3],
             'discard_userid' => $matches[4]
         ];
 
