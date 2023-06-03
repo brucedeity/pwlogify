@@ -195,12 +195,15 @@ class Logify
         $fields = $this->getFormatLogMatches();
     
         if (isset($fields['roleid']) && isset($fields['taskid']) && isset($fields['type'])) {
+
+            $this->logWriter->setOwner($fields['roleid']);
+
             switch ($fields['msg']) {
                 case 'CheckDeliverTask':
-                    $this->logWriter->logEvent($fields, 'processStartTask', 'processStartTask.json');
+                    $this->logWriter->logEvent($fields, 'processStartTask', 'startTask.json');
                     break;
                 case 'GiveUpTask':
-                    $this->logWriter->logEvent($fields, 'processGiveUpTask', 'processGiveUpTask.json');
+                    $this->logWriter->logEvent($fields, 'processGiveUpTask', 'giveUpTask.json');
                     break;
                 case 'DeliverItem':
                     preg_match('/Item id = (\d+), Count = (\d+)/', $this->logLine, $matches);
@@ -215,7 +218,7 @@ class Logify
                     $fields['exp'] = $matches[3];
                     $fields['sp'] = $matches[4];
                     $fields['reputation'] = $matches[5];
-                    $this->logWriter->logEvent($fields, 'deliverByAwardData', 'deliverByAwardData.json');
+                    $this->logWriter->logEvent($fields, 'deliverByAwardData', 'completeTask.json');
                     break;
                 default:
                     // Other task types can be handled here
