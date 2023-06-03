@@ -1,54 +1,33 @@
 <?php
 
-mb_internal_encoding("GB2312");
+require '../vendor/autoload.php';
 
+// mb_internal_encoding("GB2312");
+
+use App\Config;
+use App\LogWriter;
 
 class Logify
 {
     private $logLine;
     private $config;
 
-    public function __construct()
-    {
-        $this->config = require 'configs.php';
-    }
-
-    public function setLogLine(string $logLine)
+    public function setLogLine(string $logLine): void
     {
         $this->logLine = $logLine;
     }
 
     public function processLogLine()
     {
-        foreach ($this->config['log_patterns'] as $pattern => $methodName) {
-            if (strpos($this->logLine, $pattern) !== false) {
-                echo "Matched pattern {$pattern}\n";
+        foreach (Config::getLogPatterns() as $pattern => $methodName) {
+            if (!strpos($this->logLine, $pattern) !== false)
+                continue;
 
-                echo "Calling method {$methodName}\n";
-    
-                $this->$methodName();
-                break;
-            }
-            else {
-                // echo "No match for pattern {$pattern}\n";
-            }
+            echo "Processing log line: {$this->logLine}\n";
+
+            echo 'calling method: ' . $methodName . "\n";
+            $this->$methodName();
         }
-    }
-
-    private function appendToLogFile($filename, $data)
-    {
-        $filePath = "../../logs/{$filename}";
-        $existingData = [];
-
-        if (file_exists($filePath)) {
-            $fileContents = file_get_contents($filePath);
-            if (!empty($fileContents)) {
-                $existingData = json_decode($fileContents, true);
-            }
-        }
-
-        $existingData[] = $data;
-        file_put_contents($filePath, json_encode($existingData, JSON_PRETTY_PRINT));
     }
 
     private function parseFormatLogLine()
@@ -68,17 +47,6 @@ class Logify
         return $fields;
     }
 
-    private function logEvent($fields, $messageKey, $outputFilename)
-    {
-        $message = $this->config['messages'][$messageKey];
-        $formattedMessage = sprintf($message, ...array_values($fields));
-        
-        $fields['message'] = $formattedMessage;
-        $fields['timestamp'] = date('Y-m-d H:i:s');
-        
-        $this->appendToLogFile($outputFilename, $fields);
-    }
-
     private function processDropItem()
     {
         $fields = [];
@@ -88,7 +56,12 @@ class Logify
             $fields['itemcount'] = $matches[2];
             $fields['item_id'] = $matches[3];
     
-            $this->logEvent($fields, 'dropItem', 'dropItem.json');
+            LogWriter::logEvent($fields, 'dropItem', 'dropItem.json');
+
+            echo "Processed log line: {$this->logLine}\n";
+        }
+        else {
+            echo "No match found for log line: {$this->logLine}\n";
         }
     }    
 
@@ -100,7 +73,7 @@ class Logify
             $fields['userid'] = $matches[1];
             $fields['item_id'] = $matches[2];
     
-            $this->logEvent($fields, 'dropEquipment', 'dropEquipment.json');
+            LogWriter::logEvent($fields, 'dropEquipment', 'dropEquipment.json');
         }
     }
 
@@ -112,7 +85,7 @@ class Logify
             $fields['userid'] = $matches[1];
             $fields['amount'] = $matches[2];
 
-            $this->logEvent($fields, 'discardMoney', 'discardmoney.json');
+            LogWriter::logEvent($fields, 'discardMoney', 'discardmoney.json');
         }
     }
 
@@ -124,7 +97,7 @@ class Logify
             $fields['role'] = $matches[2];
             $fields['amount'] = $matches[1];
 
-            $this->logEvent($fields, 'pickupMoney', 'pickupmoney.json');
+            LogWriter::logEvent($fields, 'pickupMoney', 'pickupmoney.json');
         }
     }
 
@@ -137,7 +110,7 @@ class Logify
             $fields['quantity'] = $matches[2];
             $fields['item_id'] = $matches[3];
 
-            $this->logEvent($fields, 'buyItem', 'buyitem.json');
+            LogWriter::logEvent($fields, 'buyItem', 'buyitem.json');
         }
     }
 
@@ -150,7 +123,7 @@ class Logify
             $fields['quantity'] = $matches[2];
             $fields['item_id'] = $matches[3];
 
-            $this->logEvent($fields, 'sellItem', 'sellitem.json');
+            LogWriter::logEvent($fields, 'sellItem', 'sellitem.json');
         }
     }
 
@@ -162,7 +135,7 @@ class Logify
             $fields['user_id'] = $matches[1];
             $fields['amount'] = $matches[2];
 
-            $this->logEvent($fields, 'getMoney', 'getmoney.json');
+            LogWriter::logEvent($fields, 'getMoney', 'getmoney.json');
         }
     }
 
@@ -176,7 +149,7 @@ class Logify
             $fields['itemcode'] = $matches[3];
             $fields['discard_userid'] = $matches[4];
 
-            $this->logEvent($fields, 'pickupItem', 'pickupItem.json');
+            LogWriter::logEvent($fields, 'pickupItem', 'pickupItem.json');
         }
     }
 
@@ -190,7 +163,7 @@ class Logify
             $fields['cost'] = $matches[3];
             $fields['balance'] = $matches[4];
 
-            $this->logEvent($fields, 'purchaseFromAuction', 'purchaseFromAuction.json');
+            LogWriter::logEvent($fields, 'purchaseFromAuction', 'purchaseFromAuction.json');
         }
     }
 
@@ -206,16 +179,16 @@ class Logify
         if (isset($fields['roleid']) && isset($fields['taskid']) && isset($fields['type'])) {
             switch ($fields['msg']) {
                 case 'CheckDeliverTask':
-                    $this->logEvent($fields, 'processStartTask', 'processStartTask.json');
+                    LogWriter::logEvent($fields, 'processStartTask', 'processStartTask.json');
                     break;
                 case 'GiveUpTask':
-                    $this->logEvent($fields, 'processGiveUpTask', 'processGiveUpTask.json');
+                    LogWriter::logEvent($fields, 'processGiveUpTask', 'processGiveUpTask.json');
                     break;
                 case 'DeliverItem':
                     preg_match('/Item id = (\d+), Count = (\d+)/', $this->logLine, $matches);
                     $fields['itemid'] = $matches[1];
                     $fields['count'] = $matches[2];
-                    $this->logEvent($fields, 'receiveItemFromTask', 'receiveItemFromTask.json');
+                    LogWriter::logEvent($fields, 'receiveItemFromTask', 'receiveItemFromTask.json');
                     break;
                 case 'DeliverByAwardData':
                     preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->logLine, $matches);
@@ -224,7 +197,7 @@ class Logify
                     $fields['exp'] = $matches[3];
                     $fields['sp'] = $matches[4];
                     $fields['reputation'] = $matches[5];
-                    $this->logEvent($fields, 'deliverByAwardData', 'deliverByAwardData.json');
+                    LogWriter::logEvent($fields, 'deliverByAwardData', 'deliverByAwardData.json');
                     break;
                 default:
                     // Other task types can be handled here
@@ -233,25 +206,23 @@ class Logify
         }
     }
         
-
     private function processRoleLogin()
     {
         $fields = $this->parseFormatLogLine();
     
         if (isset($fields['userid']) && isset($fields['roleid'])) {
 
-            $this->logEvent($fields, 'roleLogin', 'rolelogin.json');
+            LogWriter::logEvent($fields, 'roleLogin', 'rolelogin.json');
         }
     }
     
-
     private function processRoleLogout()
     {
         $fields = $this->parseFormatLogLine();
     
         if (isset($fields['userid']) && isset($fields['roleid'])) {
 
-            $this->logEvent($fields, 'roleLogout', 'rolelogout.json');
+            LogWriter::logEvent($fields, 'roleLogout', 'rolelogout.json');
         }
     }
 
@@ -295,7 +266,7 @@ class Logify
             }
     
             $message = sprintf(
-                $this->config['messages']['trade'],
+                Config::getMessage('trade'),
                 $fields['roleA_id'],
                 $fields['roleB_id'],
                 $fields['moneyA'],
@@ -310,7 +281,8 @@ class Logify
     
             $fields['message'] = $message;
             $fields['timestamp'] = date('Y-m-d H:i:s');
-            $this->appendToLogFile('trade.json', $fields);
+            
+            LogWriter::appendToLogFile('trade.json', $fields);
         }
     }
     
