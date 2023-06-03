@@ -16,3 +16,5 @@ To use this utility, follow these steps:
 
 1. Clone the repo: `git clone https://github.com/brucedeity/pwlogify.git`
 2. Install dependencies: `composer install`
+3. Open the start_pwlogify.sh file and configure the `script_path` variable
+4. Also open the world2_listener.sh file in the scripts folder and configure the `server_path` variable if needed.
