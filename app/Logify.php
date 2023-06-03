@@ -92,6 +92,62 @@ class Logify
         }
     }
 
+    private function processSpendMoney()
+    {
+        preg_match('/用户(\d+)花掉金钱(\d+)/', $this->logLine, $matches);
+
+        if (count($matches) == 3) {
+            $fields = [
+                'userid' => $matches[1],
+                'spendMoney' => $matches[2],
+            ];
+
+            $this->logWriter->setOwner($fields['userid']);
+            $this->logWriter->logEvent($fields, 'spendMoney', 'spendMoney.json');
+        }
+    }
+
+    private function processSpConsume()
+    {
+        preg_match('/用户(\d+)消耗了sp (\d+)/', $this->logLine, $matches);
+
+        if (count($matches) == 3) {
+            $fields = [
+                'userid' => $matches[1],
+                'sp_amount' => $matches[2],
+            ];
+
+            $this->logWriter->setOwner($fields['userid']);
+            $this->logWriter->logEvent($fields, 'spConsume', 'spConsume.json');
+        }
+    }
+
+    private function processSkillLevelUp()
+    {
+        preg_match('/用户(\d+)技能(\d+)达到(\d+)级/', $this->logLine, $matches);
+
+        if (count($matches) == 4) {
+            $fields = [
+                'userid' => $matches[1],
+                'skillId' => $matches[2],
+                'skillLevel' => $matches[3],
+            ];
+
+            $this->logWriter->setOwner($fields['userid']);
+            $this->logWriter->logEvent($fields, 'skillLevelUp', 'skillLevelUp.json');
+        }
+    }
+
+    private function processRoleDie()
+    {
+        $fields = $this->getFormatLogMatches();
+
+        if (isset($fields['roleid'])) {
+            $this->logWriter->setOwner($fields['roleid']);
+            $this->logWriter->logEvent($fields, 'roleDie', 'die.json');
+        }
+    }
+
     private function processPickupMoney()
     {
         $fields = [];
@@ -182,11 +238,11 @@ class Logify
         if (preg_match('/用户(\d+)在百宝阁购买(\d+)样物品，花费(\d+)点剩余(\d+)点/', $this->logLine, $matches)) {
             $fields['userid'] = $matches[1];
             $fields['itemcount'] = $matches[2];
-            $fields['cost'] = $matches[3];
-            $fields['balance'] = $matches[4];
+            $fields['cost'] = $matches[3] / 100;
+            $fields['balance'] = $matches[4] / 100;
 
             $this->logWriter->setOwner($fields['userid']);
-            $this->logWriter->logEvent($fields, 'purchaseFromAuction', 'purchaseFromAuction.json');
+            $this->logWriter->logEvent($fields, 'purchaseFromAuction', 'gshopBuy.json');
         }
     }
 
