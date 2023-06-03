@@ -1,6 +1,6 @@
 {
     "name": "brucedeity/pwlogify",
-    "description": "PHP Logger for Perfect World servers",
+    "description": "PHP-based logging utility that captures and processes logs from a Perfect World Server.",
     "autoload": {
         "psr-4": {
             "App\\": "app/"
