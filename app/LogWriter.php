@@ -28,8 +28,10 @@ class LogWriter
 
     public function appendToLogFile(string $filename, array $data)
     {
-        if (!$this->owner)
+        if (!isset($this->owner))
+        {
             throw new \Exception('Owner not set when trying to write to '. $filename);
+        }
     
         $ownerFolder = LOGS_PATH.'/'.$this->owner;
 

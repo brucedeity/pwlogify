@@ -20,10 +20,12 @@ class Logify
     public function processLogLine()
     {
         foreach (Config::getLogPatterns() as $pattern => $methodName) {
-            if (!strpos($this->logLine, $pattern) !== false)
+            if (strpos($this->logLine, $pattern) === false){
                 continue;
+            }
 
             $this->$methodName();
+            break;
         }
     }
     
@@ -62,8 +64,12 @@ class Logify
         ];
 
         foreach ($gmActionsMethods as $pattern => $methodName) {
-            if (!strpos($this->logLine, $pattern) !== false)
-                $this->$methodName($matches[1]);
+            if (!strpos($this->logLine, $pattern) === false){
+                continue;
+            }
+                
+            $this->$methodName($matches[1]);
+            break;
         }
     }
 
@@ -450,8 +456,12 @@ class Logify
         ];
 
         foreach ($factionActions as $pattern => $methodName) {
-            if (strpos($this->logLine, $pattern) !== false)
-                $this->$methodName();
+            if (strpos($this->logLine, $pattern) === false){
+                continue;
+            }
+
+            $this->$methodName();
+            break;
         }
     }
 
@@ -546,6 +556,9 @@ class Logify
     private function processChat()
     {
         $fields = [];
+
+        $srcRoleId = 0;
+        
         if (preg_match('/Chat: src=(-?\d+) chl=(\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
             $fields = [
                 'srcRoleId' => $matches[1],
@@ -779,8 +792,9 @@ class Logify
         $items = [];
         $objects = explode(';', $objects);
         foreach ($objects as $object) {
-            if (!preg_match('/(\d+),(\d+),(\d+)/', $object, $item))
+            if (!preg_match('/(\d+),(\d+),(\d+)/', $object, $item)){
                 continue;
+            }
                 
             $items[] = ['itemId' => $item[1], 'quantity' => $item[2], 'position' => $item[3]];
         }
