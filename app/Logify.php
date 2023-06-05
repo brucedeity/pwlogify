@@ -758,17 +758,19 @@ class Logify
     {
         if (!preg_match('/roleidA=(\d+):roleidB=(\d+):moneyA=(\d+):moneyB=(\d+):objectsA=([^:]*):objectsB=(.*)$/', $this->logLine, $matches))
             return;
-
+    
         $fields = [
             'roleA_id' => $matches[1],
             'roleB_id' => $matches[2],
             'moneyA' => $matches[3],
-            'moneyB' => $matches[4]
+            'moneyB' => $matches[4],
+            'itemsA' => [],
+            'itemsB' => []
         ];
-
+    
         $objectsA = $this->parseTradeObjets($matches[5], $fields, 'itemsA');
         $objectsB = $this->parseTradeObjets($matches[6], $fields, 'itemsB');
-
+    
         $message = sprintf(
             Config::getMessage('trade'),
             $fields['roleA_id'],
@@ -778,11 +780,11 @@ class Logify
             $fields['moneyB'],
             $fields['roleB_id'],
             $fields['roleA_id'],
-            !empty($itemsA) ? count($itemsA) : 0,
+            !empty($fields['itemsA']) ? count($fields['itemsA']) : 0,
             $fields['roleB_id'],
-            !empty($itemsB) ? count($itemsB) : 0
+            !empty($fields['itemsB']) ? count($fields['itemsB']) : 0
         );
-
+    
         $fields['message'] = $message;
         
         $this->logWriter->appendToLogFile('trade.json', $fields);
@@ -801,7 +803,7 @@ class Logify
         }
 
         if (!array_key_exists($itemsKey, $fields))
-            throw new Exception("Key {$itemsKey} does not exist in fields array");
+            throw new Exception("Key {$itemsKey} does not exist in fields array, logline: {$this->logLine}");
 
         if (!empty($items))
             $fields[$itemsKey] = $items;
