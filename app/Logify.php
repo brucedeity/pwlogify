@@ -555,10 +555,10 @@ class Logify
 
     private function processChat()
     {
-        $fields = [];
+        $fields = [
+            'srcRoleId' => null
+        ];
 
-        $srcRoleId = 0;
-        
         if (preg_match('/Chat: src=(-?\d+) chl=(\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
             $fields = [
                 'srcRoleId' => $matches[1],
