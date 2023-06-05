@@ -787,6 +787,7 @@ class Logify
     
         $fields['message'] = $message;
         
+        $this->logWriter->setOwner($fields['roleA_id']);
         $this->logWriter->appendToLogFile('trade.json', $fields);
     }
 
