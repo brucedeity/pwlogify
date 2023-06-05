@@ -18,12 +18,16 @@ class LogWriter
         return $message;
     }
 
-    public function logEvent(array $fields, $messageKey, string $outputFilename)
+    public function logEvent(array $fields, $messageKey, string $fileNamePrefix = '', string $outputFilename = null)
     {
         if ($messageKey)
+        {
             $message = $this->buildMessageAndTimestamp($fields, $messageKey);
+        }
+
+        $fileName = $outputFilename ?? $fileNamePrefix.'_'.$messageKey;
         
-        $this->appendToLogFile($outputFilename, $fields);
+        $this->appendToLogFile($fileName, $fields);
     }
 
     public function appendToLogFile(string $filename, array $data)
@@ -38,7 +42,7 @@ class LogWriter
         if (!is_dir($ownerFolder))
             mkdir($ownerFolder, 0777, true);
     
-        $filePath = "{$ownerFolder}/{$filename}";
+        $filePath = $ownerFolder.'/'.$filename.'.json';
         $existingData = [];
     
         if (file_exists($filePath)) {
@@ -70,7 +74,7 @@ class LogWriter
         $existingData[] = $fields;
         file_put_contents($filePath, json_encode($existingData, JSON_PRETTY_PRINT));
     }
-    
+
     public function setOwner(int $roleId)
     {
         $this->owner = $roleId;

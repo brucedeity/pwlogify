@@ -11,7 +11,7 @@ Each log entry is parsed and broken down into respective fields for further proc
 * Convert log entries into structured formats for easy analysis
 * Easy-to-extend structure, allowing for new types of log entries to be quickly integrated
 
-## Installation
+## Installation/Usage
 To use this utility, follow these steps:
 
 1. Clone the repo: `git clone https://github.com/brucedeity/pwlogify.git`
