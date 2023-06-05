@@ -8,29 +8,45 @@ use App\LogWriter;
 class Logify
 {
     private $logLine;
-    private $config;
-    private $fields;
+    private $methodName;
+    private $buildMessage = true;
 
-    public function setLogLine(string $logLine): void
-    {
+    public function setLogLine(string $logLine)
+    {        
         $this->logLine = $logLine;
         
         $this->logWriter = new LogWriter;
+    }
+
+    public function getBuildMessage(): bool
+    {
+        return $this->buildMessage;
+    }
+
+    public function setBuildMessage(bool $status)
+    {
+        $this->buildMessage = $status;
+    }
+
+    public function getLogWriter(): LogWriter
+    {
+        return $this->logWriter;
     }
 
     public function processLogLine()
     {
         foreach (Config::getLogPatterns() as $pattern => $methodName) {
             if (strpos($this->logLine, $pattern) !== false){
+                $this->methodName = $methodName;
+
                 $this->$methodName();
                 return;
             }
         }
     }
     
-    private function getFormatLogMatches()
+    private function getFieldsFromFormatlog()
     {
-        $this->fields = [];
         $matches = [];
         preg_match_all('/(\w+)=([\d\w]+)/', $this->logLine, $matches, PREG_SET_ORDER);
     
@@ -39,8 +55,6 @@ class Logify
                 $this->fields[$match[1]] = $match[2];
             }
         }
-    
-        return $this->fields;
     }
     
     private function processGMActions()
@@ -75,10 +89,10 @@ class Logify
         if (!preg_match('/开启活动(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'activityId' => $matches[1],
-        ];
+        ]);
 
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -88,10 +102,10 @@ class Logify
         if (!preg_match('/关闭活动(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'activityId' => $matches[1],
-        ];
+        ]);
 
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -101,10 +115,10 @@ class Logify
         if (!preg_match('/切换了无敌状态\(([^)]+)\)/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'state' => $matches[1] == '正常' ? 0 : 1,
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }    
@@ -114,10 +128,10 @@ class Logify
         if (!preg_match('/切换了隐身状态\(([^)]+)\)/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'state' => $matches[1] == '现形' ? 0 : 1,
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }    
@@ -127,10 +141,10 @@ class Logify
         if (!preg_match('/丢出了怪物生成器(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'monsterSpawnerId' => $matches[1],
-        ];
+        ]);
 
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -140,11 +154,11 @@ class Logify
         if (!preg_match('/用户断线了\((\d+)\):(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'disconnectType' => $matches[1],
             'playerId' => $matches[2],
-        ];
+        ]);
 
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -154,10 +168,10 @@ class Logify
         if (!preg_match('/激活了生成区域(\d+)/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'triggerId' => $matches[1],
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -167,10 +181,10 @@ class Logify
         if (!preg_match('/取消了生成区域(\d+)/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'triggerId' => $matches[1],
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -180,12 +194,12 @@ class Logify
         if (!preg_match('/创建了(\d+)个怪物(\d+)\((\d+)\)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'monsterCount' => $matches[1],
             'monsterType' => $matches[2],
             'monsterId' => $matches[3],
-        ];
+        ]);
 
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -195,10 +209,10 @@ class Logify
         if (!preg_match('/试图移动到玩家(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'playerId' => $matches[1],
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -210,13 +224,13 @@ class Logify
 
         $position = explode(',', $matches[2]);
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'playerId' => $matches[1],
             'positionX' => floatval($position[0]),
             'positionY' => floatval($position[1]),
             'positionZ' => floatval($position[2]),
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }
@@ -228,13 +242,13 @@ class Logify
     
         $position = explode(',', $matches[2]);
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'playerId' => $matches[1],
             'positionX' => floatval($position[0]),
             'positionY' => floatval($position[1]),
             'positionZ' => floatval($position[2]),
-        ];
+        ]);
     
         $this->setOwnerAndLogEvent($this->fields, __METHOD__, 'gm');
     }    
@@ -244,13 +258,11 @@ class Logify
         if (!preg_match('/用户(\d+)采集得到(\d+)个(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'itemCount' => $matches[2],
             'itemId' => $matches[3],
-        ];
-
-        $this->setOwnerAndLogEvent($this->fields, __METHOD__);
+        ]);
     }
 
     private function processDropItem()
@@ -258,14 +270,11 @@ class Logify
         if (!preg_match('/用户(\d+)丢弃包裹(\d+)个(\d+)/', $this->logLine, $matches))
             return;
         
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'itemcount' => $matches[2],
             'itemId' => $matches[3]
-        ];
-    
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'dropItem');
+        ]);
     }   
 
     private function processDropEquipment()
@@ -273,13 +282,10 @@ class Logify
         if (!preg_match('/用户(\d+)丢弃装备(\d+)/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'itemId' => $matches[2]
-        ];
-    
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'dropEquipment');
+        ]);
     }
 
     private function processDiscardMoney()
@@ -287,13 +293,10 @@ class Logify
         if (!preg_match('/用户(\d+)丢弃金钱(\d+)/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'amount' => $matches[2]
-        ];
-    
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'discardMoney');
+        ]);
     }
 
     private function processCreateParty()
@@ -301,14 +304,11 @@ class Logify
         if (!preg_match('/用户(\d+)建立了队伍\((\d+),(\d+)\)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'creatorId' => $matches[1],
             'teamId' => $matches[2],
             'teamType' => $matches[3],
-        ];
-
-        $this->logWriter->setOwner($this->fields['creatorId']);
-        $this->logWriter->logEvent($this->fields, 'createParty');
+        ]);
     }
 
     private function processjoinParty()
@@ -316,14 +316,11 @@ class Logify
         if (!preg_match('/用户(\d+)成为队员\((\d+),(\d+)\)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'userId' => $matches[1],
             'teamId' => $matches[2],
             'teamMemberId' => $matches[3],
-        ];
-
-        $this->logWriter->setOwner($this->fields['userId']);
-        $this->logWriter->logEvent($this->fields, 'joinParty');
+        ]);
     }
 
     private function processSpendMoney()
@@ -331,13 +328,10 @@ class Logify
         if (!preg_match('/用户(\d+)花掉金钱(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'spendMoney' => $matches[2],
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'spendMoney');
+        ]);
     }
 
     private function processPickupMoney()
@@ -345,13 +339,10 @@ class Logify
         if (!preg_match('/拣起金钱(\d+)\W+(\w+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[2],
             'amount' => $matches[1]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'pickupMoney');
+        ]);
     }
 
     private function processBuyItem()
@@ -359,14 +350,11 @@ class Logify
         if (!preg_match('/用户(\d+).*从NPC购买了(\d+)个(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'quantity' => $matches[2],
             'itemId' => $matches[3]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'buyItem');
+        ]);
     }
 
     private function processSellItem()
@@ -374,14 +362,11 @@ class Logify
         if (!preg_match('/用户(\d+).*卖店(\d+)个(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'quantity' => $matches[2],
             'itemId' => $matches[3]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'sellItem', 'sellItemToNPC.json');
+        ]);
     }
 
     private function processSpConsume()
@@ -389,13 +374,10 @@ class Logify
         if (!preg_match('/用户(\d+)消耗了sp (\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'spAmount' => $matches[2],
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'spConsume', 'spConsume.json');
+        ]);
     }
 
     private function processSkillLevelUp()
@@ -403,25 +385,19 @@ class Logify
         if (!preg_match('/用户(\d+)技能(\d+)达到(\d+)级/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'skillId' => $matches[2],
             'skillLevel' => $matches[3],
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'skillLevelUp', 'skillLevelUp.json');
+        ]);
     }
 
     private function processRoleDie()
     {
+        $this->getFieldsFromFormatlog();
+
         if (!isset($this->fields['roleid']))
             return;
-
-        $this->fields = $this->getFormatLogMatches();
-
-        $this->logWriter->setOwner($this->fields['roleid']);
-        $this->logWriter->logEvent($this->fields, 'roleDie', 'die.json');
     }
 
     public function processFactionActions()
@@ -441,17 +417,14 @@ class Logify
 
     public function processCreateFaction()
     {
-        $this->fields = $this->getFormatLogMatches();
-
-        $this->logWriter->setOwner($this->fields['roleid']);
-        $this->logWriter->logEvent($this->fields, 'createFaction', 'createFaction.json');
+        $this->getFieldsFromFormatlog();
     }
 
     public function processDeleteFaction()
     {
-        $this->fields = $this->getFormatLogMatches();
+        $this->getFieldsFromFormatlog();
 
-        $this->logWriter->logGeneralInfo('deleteFaction', $this->fields);
+        $this->getLogWriter()->logGeneralInfo('deleteFaction', $this->fields);
     }
 
     private function processGetMoney()
@@ -459,13 +432,10 @@ class Logify
         if (!preg_match('/用户(\d+).*得到金钱(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'amount' => $matches[2]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'getMoney', 'getMoney.json');
+        ]);
     }
 
     private function pickupTeamMoney()
@@ -473,14 +443,11 @@ class Logify
         if (!preg_match('/用户(\d+)组队拣起用户(\d+)丢弃的金钱(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'pickupRoleId' => $matches[2],
             'amount' => $matches[3]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'pickupTeamMoney', 'pickupTeamMoney.json');
+        ]);
     }
 
     private function processPetEggHatch()
@@ -488,13 +455,10 @@ class Logify
         if (!preg_match('/用户(\d+)孵化了宠物蛋(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'userId' => $matches[1],
             'petEggId' => $matches[2]
-        ];
-
-        $this->logWriter->setOwner($this->fields['userId']);
-        $this->logWriter->logEvent($this->fields, 'petHatch', 'petHatch.json');
+        ]);
     }
 
     private function processPetEggRestore()
@@ -502,13 +466,10 @@ class Logify
         if (!preg_match('/用户(\d+)还原了宠物蛋(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'userId' => $matches[1],
             'petEggId' => $matches[2]
-        ];
-
-        $this->logWriter->setOwner($this->fields['userId']);
-        $this->logWriter->logEvent($this->fields, 'petRestore', 'petRestore.json');
+        ]);
     }
 
     private function processLevelUp()
@@ -516,15 +477,12 @@ class Logify
         if (!preg_match('/用户(\d+)升级到(\d+)级金钱(\d+),游戏时间(\d+:\d+:\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'level' => $matches[2],
             'money' => number_format($matches[3], 0, ',', '.'),
             'playtime' => $matches[4]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'levelUp', 'levelup.json');
+        ]);
     }
 
     private function processChat()
@@ -536,19 +494,16 @@ class Logify
         
         foreach ($patterns as $pattern) {
             if (preg_match($pattern['pattern'], $this->logLine, $matches)) {
-                $this->fields = [
+                $this->getLogWriter()->setFields([
                     'srcRoleId' => $matches[1],
                     'channel' => $pattern['channel'] !== null ? $pattern['channel'] : $this->getChannelName($matches[2]),
                     'message' => $this->decodeBase64Message($matches[3]),
-                ];
+                ]);
                 
                 if (isset($matches[2]) && $pattern['channel'] === 'Whisper') {
                     $this->fields['dstRoleId'] = $matches[2];
                 }
                 
-                $this->logWriter->setOwner($this->fields['srcRoleId']);
-                $this->logWriter->logEvent($this->fields, null, 'chat.json');
-
                 return;
             }
         }
@@ -588,16 +543,13 @@ class Logify
         }
         $materialsString = implode("; ", $materials);
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'itemCount' => $matches[2],
             'itemId' => $matches[3],
             'recipeId' => $matches[4],
             'materials' => $materialsString
-        ];
-    
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'craftItem', 'craftItem.json');
+        ]);
     }
     
     private function processPickupItem()
@@ -605,15 +557,12 @@ class Logify
         if (!preg_match('/用户(\d+)拣起(\d+)个(\d+)\[用户(\d+)丢弃\]/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'pickup_userid' => $matches[1],
             'itemcount' => $matches[2],
             'itemId' => $matches[3],
             'discard_userid' => $matches[4]
-        ];
-
-        $this->logWriter->setOwner($this->fields['pickup_userid']);
-        $this->logWriter->logEvent($this->fields, 'pickupItem', 'pickupItem.json');
+        ]);
     }
 
     private function processPurchaseFromAuction()
@@ -621,15 +570,12 @@ class Logify
         if (!preg_match('/用户(\d+)在百宝阁购买(\d+)样物品，花费(\d+)点剩余(\d+)点/', $this->logLine, $matches))
             return;
             
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'itemcount' => $matches[2],
             'cost' => $matches[3] / 100,
             'balance' => $matches[4] / 100
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'purchaseFromAuction', 'gshopBuy.json');
+        ]);
     }
 
     private function processGMCommand()
@@ -637,13 +583,10 @@ class Logify
         if (!preg_match('/GM:用户(\d+)执行了内部命令(\d+)/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'commandId' => $matches[2],
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'gmCommand', 'gm');
+        ]);
     }
 
     private function processObtainTitle()
@@ -651,37 +594,34 @@ class Logify
         if (!preg_match('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/', $this->logLine, $matches))
             return;
 
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
             'titleId' => $matches[2],
             'time' => $matches[3]
-        ];
-
-        $this->logWriter->setOwner($this->fields['roleId']);
-        $this->logWriter->logEvent($this->fields, 'obtainTitle', 'obtainTitle.json');
+        ]);
     }
 
     private function processTask()
     {
-        $this->fields = $this->getFormatLogMatches();
+        $this->getFieldsFromFormatlog();
 
         if (!isset($this->fields['roleid']) OR !isset($this->fields['taskid']) OR !isset($this->fields['type']))
             return;
             
-        $this->logWriter->setOwner($this->fields['roleid']);
+        $this->getLogWriter()->setOwner($this->fields['roleid']);
 
         switch ($this->fields['msg']) {
             case 'CheckDeliverTask':
-                $this->logWriter->logEvent($this->fields, 'processStartTask', 'startTask.json');
+                $this->getLogWriter()->logEvent($this->fields, 'processStartTask', 'startTask.json');
                 break;
             case 'GiveUpTask':
-                $this->logWriter->logEvent($this->fields, 'processGiveUpTask', 'giveUpTask.json');
+                $this->getLogWriter()->logEvent($this->fields, 'processGiveUpTask', 'giveUpTask.json');
                 break;
             case 'DeliverItem':
                 preg_match('/Item id = (\d+), Count = (\d+)/', $this->logLine, $matches);
                 $this->fields['itemid'] = $matches[1];
                 $this->fields['count'] = $matches[2];
-                $this->logWriter->logEvent($this->fields, 'receiveItemFromTask', 'receiveItemFromTask.json');
+                $this->getLogWriter()->logEvent($this->fields, 'receiveItemFromTask', 'receiveItemFromTask.json');
                 break;
             case 'DeliverByAwardData':
                 preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->logLine, $matches);
@@ -690,42 +630,33 @@ class Logify
                 $this->fields['exp'] = $matches[3];
                 $this->fields['sp'] = $matches[4];
                 $this->fields['reputation'] = $matches[5];
-                $this->logWriter->logEvent($this->fields, 'deliverByAwardData', 'completeTask.json');
+                $this->getLogWriter()->logEvent($this->fields, 'deliverByAwardData', 'completeTask.json');
                 break;
         }
     }
 
     private function processSendMail()
     {
-        $this->fields = $this->getFormatLogMatches();
+        $this->getFieldsFromFormatlog();
 
         if (!isset($this->fields['src']))
             return;
-
-        $this->logWriter->setOwner($this->fields['src']);
-        $this->logWriter->logEvent($this->fields, 'processSendMail', 'sendMail.json');
     }
         
     private function processRoleLogin()
     {
-        $this->fields = $this->getFormatLogMatches();
+        $this->getFieldsFromFormatlog();
     
         if (!isset($this->fields['roleid']))
             return;
-
-        $this->logWriter->setOwner($this->fields['roleid']);
-        $this->logWriter->logEvent($this->fields, 'roleLogin', 'roleLogin.json');
     }
     
     private function processRoleLogout()
     {
-        $this->fields = $this->getFormatLogMatches();
+        $this->getFieldsFromFormatlog();
     
         if (!isset($this->fields['roleid']))
             return;
-
-        $this->logWriter->setOwner($this->fields['roleid']);
-        $this->logWriter->logEvent($this->fields, 'roleLogout', 'roleLogout.json');
     }
 
     private function processTrade()
@@ -733,14 +664,14 @@ class Logify
         if (!preg_match('/roleidA=(\d+):roleidB=(\d+):moneyA=(\d+):moneyB=(\d+):objectsA=([^:]*):objectsB=(.*)$/', $this->logLine, $matches))
             return;
     
-        $this->fields = [
+        $this->getLogWriter()->setFields([
             'roleA_id' => $matches[1],
             'roleB_id' => $matches[2],
             'moneyA' => $matches[3],
             'moneyB' => $matches[4],
             'itemsA' => [],
             'itemsB' => []
-        ];
+        ]);
     
         $objectsA = $this->parseTradeObjets($matches[5], $this->fields, 'itemsA');
         $objectsB = $this->parseTradeObjets($matches[6], $this->fields, 'itemsB');
@@ -761,11 +692,11 @@ class Logify
     
         $this->fields['message'] = $message;
         
-        $this->logWriter->setOwner($this->fields['roleA_id']);
-        $this->logWriter->appendToLogFile('trade.json', $this->fields);
+        $this->getLogWriter()->setOwner($this->fields['roleA_id']);
+        $this->getLogWriter()->appendToLogFile('trade.json', $this->fields);
     }
 
-    private function parseTradeObjets(string $objects, array &$this->fields, string $itemsKey)
+    private function parseTradeObjets(string $objects, array &$fields, string $itemsKey)
     {
         $items = [];
         $objects = explode(';', $objects);
@@ -784,25 +715,22 @@ class Logify
         return $items;
     }
 
-    public function logEvent()
+    public function buildLogEvent()
     {
-        
+        $this->getLogWriter()->setOwner();
+        $this->getLogWriter()->logEvent($this->getMessageKeyName());
     }
 
-    public function setOwnerAndLogEvent(array $fields, string $methodName, string $fileNamePrefix = '', int $ownerKey = 0)
+    private function getMessageKeyName(): string
     {
-        $this->logWriter->setOwner($this->fields[$ownerKey]);
-        $this->logWriter->logEvent($this->fields, $this->buildMessageKeyName($methodName), $fileNamePrefix);
-    }
+        if ($this->getBuildMessage() === false)
+            return null;
 
-    private function getMessageKeyName(string $methodName): string
-    {
         $prefixes = ['process', 'handle'];
-        $keyName = $methodName;
     
         foreach ($prefixes as $prefix) {
-            if (strpos($methodName, $prefix) === 0) {
-                $keyName = substr($methodName, strlen($prefix));
+            if (strpos($this->methodName, $prefix) === 0) {
+                $keyName = substr($this->methodName, strlen($prefix));
                 break;
             }
         }
@@ -815,7 +743,7 @@ if ($argc > 1) {
     $logify = new Logify;
     $logify->setLogLine($argv[1]);
     $logify->processLogLine();
-    $logify->logEvent();
+    $logify->buildLogEvent();
 }
 else {
     echo "Usage: php logify.php <log line>\n";

@@ -93,12 +93,17 @@ class Config
         ];
     }
 
-    public static function getMessage(string $messageKey): string
+    public function messageKeyExists(string $messageKey): bool
+    {
+        return isset(self::getMessages()[$messageKey]);
+    }
+
+    public static function getMessage(string $messageKey)
     {
         $messages = self::getMessages();
 
-        if (!array_key_exists($messageKey, $messages)) {
-            throw new \Exception('Message key not found: ' . $messageKey . '.');
+        if (!isset($messages[$messageKey])) {
+            return;
         }
 
         return $messages[$messageKey];
