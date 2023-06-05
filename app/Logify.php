@@ -555,29 +555,30 @@ class Logify
 
     private function processChat()
     {
-        $fields = [
-            'srcRoleId' => null
+        $patterns = [
+            ['pattern' => '/Chat: src=(-?\d+) chl=(\d+) msg=([\w\+=\/]+)/', 'channel' => null],
+            ['pattern' => '/Whisper: src=(-?\d+) dst=(-?\d+) msg=([\w\+=\/]+)/', 'channel' => 'Whisper'],
         ];
+        
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern['pattern'], $this->logLine, $matches)) {
+                $fields = [
+                    'srcRoleId' => $matches[1],
+                    'channel' => $pattern['channel'] !== null ? $pattern['channel'] : $this->getChannelName($matches[2]),
+                    'message' => $this->decodeBase64Message($matches[3]),
+                ];
+                
+                if (isset($matches[2]) && $pattern['channel'] === 'Whisper') {
+                    $fields['dstRoleId'] = $matches[2];
+                }
+                
+                $this->logWriter->setOwner($fields['srcRoleId']);
+                $this->logWriter->logEvent($fields, null, 'chat.json');
 
-        if (preg_match('/Chat: src=(-?\d+) chl=(\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
-            $fields = [
-                'srcRoleId' => $matches[1],
-                'channel' => $this->getChannelName($matches[2]),
-                'message' => $this->decodeBase64Message($matches[3]),
-            ];
-        } elseif (preg_match('/Whisper: src=(-?\d+) dst=(-?\d+) msg=([\w\+=\/]+)/', $this->logLine, $matches)) {
-            $fields = [
-                'srcRoleId' => $matches[1],
-                'dstRoleId' => $matches[2],
-                'channel' => 'Whisper',
-                'message' => $this->decodeBase64Message($matches[3]),
-            ];
+                return;
+            }
         }
-    
-        $this->logWriter->setOwner($fields['srcRoleId']);
-        $this->logWriter->logEvent($fields, null, 'chat.json');
     }
-    
 
     private function getChannelName($channelId)
     {
