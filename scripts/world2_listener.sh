@@ -40,8 +40,7 @@ patterns=(
 
 process_log_line() {
     local log_line=$1
-    php_output=$(php "${logify_script}" "${log_line}" 2>> "${script_dir}/../logs/errors.txt")
-    printf "%s\n" "$php_output"
+    php "${logify_script}" "${log_line}" 1>/dev/null 2>> "${script_dir}/../logs/errors.txt"
 }
 
 stdbuf -oL tail -f -n0 \
