@@ -20,12 +20,10 @@ class Logify
     public function processLogLine()
     {
         foreach (Config::getLogPatterns() as $pattern => $methodName) {
-            if (strpos($this->logLine, $pattern) === false){
-                continue;
+            if (strpos($this->logLine, $pattern) !== false){
+                $this->$methodName();
+                return;
             }
-
-            $this->$methodName();
-            break;
         }
     }
     
@@ -64,12 +62,10 @@ class Logify
         ];
 
         foreach ($gmActionsMethods as $pattern => $methodName) {
-            if (!strpos($this->logLine, $pattern) === false){
-                continue;
+            if (strpos($this->logLine, $pattern) !== false){
+                $this->$methodName($matches[1]);
+                return;
             }
-                
-            $this->$methodName($matches[1]);
-            break;
         }
     }
 
@@ -317,7 +313,7 @@ class Logify
         ];
     
         $this->logWriter->setOwner($fields['roleId']);
-        $this->logWriter->logEvent($fields, 'discardMoney', 'discardmoney.json');
+        $this->logWriter->logEvent($fields, 'discardMoney', 'discardMoney.json');
     }
 
     private function processCreateParty()
@@ -375,7 +371,7 @@ class Logify
         ];
 
         $this->logWriter->setOwner($fields['roleId']);
-        $this->logWriter->logEvent($fields, 'pickupMoney', 'pickupmoney.json');
+        $this->logWriter->logEvent($fields, 'pickupMoney', 'pickupMoney.json');
     }
 
     private function processBuyItem()
@@ -390,7 +386,7 @@ class Logify
         ];
 
         $this->logWriter->setOwner($fields['roleId']);
-        $this->logWriter->logEvent($fields, 'buyItem', 'buyitem.json');
+        $this->logWriter->logEvent($fields, 'buyItem', 'buyItemFromNPC.json');
     }
 
     private function processSellItem()
@@ -405,7 +401,7 @@ class Logify
         ];
 
         $this->logWriter->setOwner($fields['roleId']);
-        $this->logWriter->logEvent($fields, 'sellItem', 'sellitem.json');
+        $this->logWriter->logEvent($fields, 'sellItem', 'sellItemToNPC.json');
     }
 
     private function processSpConsume()
@@ -456,12 +452,10 @@ class Logify
         ];
 
         foreach ($factionActions as $pattern => $methodName) {
-            if (strpos($this->logLine, $pattern) === false){
-                continue;
+            if (strpos($this->logLine, $pattern) !== false){
+                $this->$methodName();
+                return;
             }
-
-            $this->$methodName();
-            break;
         }
     }
 
@@ -707,7 +701,7 @@ class Logify
                 preg_match('/Item id = (\d+), Count = (\d+)/', $this->logLine, $matches);
                 $fields['itemid'] = $matches[1];
                 $fields['count'] = $matches[2];
-                $this->logWriter->logEvent($fields, 'receiveItemFromTask', 'itemFromTask.json');
+                $this->logWriter->logEvent($fields, 'receiveItemFromTask', 'receiveItemFromTask.json');
                 break;
             case 'DeliverByAwardData':
                 preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->logLine, $matches);
@@ -729,7 +723,7 @@ class Logify
             return;
 
         $this->logWriter->setOwner($fields['src']);
-        $this->logWriter->logEvent($fields, 'processSendMail', 'sendmail.json');
+        $this->logWriter->logEvent($fields, 'processSendMail', 'sendMail.json');
     }
         
     private function processRoleLogin()
@@ -740,7 +734,7 @@ class Logify
             return;
 
         $this->logWriter->setOwner($fields['roleid']);
-        $this->logWriter->logEvent($fields, 'roleLogin', 'rolelogin.json');
+        $this->logWriter->logEvent($fields, 'roleLogin', 'roleLogin.json');
     }
     
     private function processRoleLogout()
@@ -751,7 +745,7 @@ class Logify
             return;
 
         $this->logWriter->setOwner($fields['roleid']);
-        $this->logWriter->logEvent($fields, 'roleLogout', 'rolelogout.json');
+        $this->logWriter->logEvent($fields, 'roleLogout', 'roleLogout.json');
     }
 
     private function processTrade()
@@ -796,11 +790,9 @@ class Logify
         $items = [];
         $objects = explode(';', $objects);
         foreach ($objects as $object) {
-            if (!preg_match('/(\d+),(\d+),(\d+)/', $object, $item)){
-                continue;
+            if (preg_match('/(\d+),(\d+),(\d+)/', $object, $item)){
+                $items[] = ['itemId' => $item[1], 'quantity' => $item[2], 'position' => $item[3]];
             }
-                
-            $items[] = ['itemId' => $item[1], 'quantity' => $item[2], 'position' => $item[3]];
         }
 
         if (!array_key_exists($itemsKey, $fields))
