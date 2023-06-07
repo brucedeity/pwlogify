@@ -67,14 +67,14 @@ class Logify
     {
         $matches = [];
         preg_match_all('/(\w+)=([\d\w]+)/', $this->getLogLine(), $matches, PREG_SET_ORDER);
-    
+
         foreach ($matches as $match) {
             if (count($match) == 3) {
-                $this->getLogWriter()->appendToFields([
-                    $match[1] = $match[2]
-                ]);
+                $matches[$match[1]] = $match[2];
             }
         }
+
+        $this->getLogWriter()->setFields($matches);
     }
     
     private function processGMActions(): void
@@ -625,35 +625,34 @@ class Logify
 
     private function processTask(): void
     {
-        $this->getFieldsFromFormatlog();
+        $this->getAndvalidateFormatLogFields([
+            'roleid', 'taskid', 'type'
+        ]);
 
-        if (!isset($this->fields['roleid']) OR !isset($this->fields['taskid']) OR !isset($this->fields['type']))
-            $this->throwInvalidLogLineException();
-            
-        $this->getLogWriter()->setOwner($this->fields['roleid']);
+        $type = lcfirst($this->getLogWriter()->getKeyFromFields('type'));
 
-        switch ($this->fields['msg']) {
-            case 'CheckDeliverTask':
-                $this->getLogWriter()->logEvent($this->fields, 'processStartTask', 'startTask.json');
-                break;
-            case 'GiveUpTask':
-                $this->getLogWriter()->logEvent($this->fields, 'processGiveUpTask', 'giveUpTask.json');
-                break;
-            case 'DeliverItem':
-                preg_match('/Item id = (\d+), Count = (\d+)/', $this->getLogLine(), $matches);
-                $this->fields['itemid'] = $matches[1];
-                $this->fields['count'] = $matches[2];
-                $this->getLogWriter()->logEvent($this->fields, 'receiveItemFromTask', 'receiveItemFromTask.json');
-                break;
-            case 'DeliverByAwardData':
-                preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->getLogLine(), $matches);
-                $this->fields['success'] = $matches[1];
-                $this->fields['gold'] = $matches[2];
-                $this->fields['exp'] = $matches[3];
-                $this->fields['sp'] = $matches[4];
-                $this->fields['reputation'] = $matches[5];
-                $this->getLogWriter()->logEvent($this->fields, 'deliverByAwardData', 'completeTask.json');
-                break;
+        $this->setMethodName($type);
+
+        if ($type == 'DeliverItem')
+        {
+            preg_match('/Item id = (\d+), Count = (\d+)/', $this->getLogLine(), $matches);
+
+            $this->getLogWriter()->appendToFields([
+                'itemid' => $matches[1],
+                'count' => $matches[2]
+            ]);
+        }
+        else if ($type == 'DeliverByAwardData')
+        {
+            preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->getLogLine(), $matches);
+                
+            $this->getLogWriter()->appendToFields([
+                'success' => $matches[1],
+                'gold' => $matches[2],
+                'exp' => $matches[3],
+                'sp' => $matches[4],
+                'reputation' => $matches[5]
+            ]);
         }
     }
 
@@ -736,6 +735,17 @@ class Logify
 
         return $items;
     }
+    
+    public function getAndvalidateFormatLogFields(array $expectedFields): void
+    {
+        $this->getFieldsFromFormatlog();
+
+        foreach ($expectedFields as $key => $value) {
+            if (!$this->getLogWriter()->assertFieldExists($key)) {
+                throw new Exception("Expected key: {$key} not found in fields. Current fields: ".json_encode($this->fields, JSON_PRETTY_PRINT));
+            }
+        }
+    }
 
     public function throwInvalidLogLineException(): void
     {
@@ -756,22 +766,24 @@ class Logify
         $this->getLogWriter()->logEvent($this->getMessageKeyName());
     }
 
-    private function getMessageKeyName(): string
+    private function getMessageKeyName(): ?string
     {
-        if ($this->getBuildMessage() === false)
+        if (!$this->getBuildMessage()) {
             return null;
-
+        }
+    
         $prefixes = ['process', 'handle'];
+        $methodName = $this->getMethodName();
     
         foreach ($prefixes as $prefix) {
-            if (strpos($this->methodName, $prefix) === 0) {
-                $keyName = substr($this->methodName, strlen($prefix));
-                break;
+            if (strpos($methodName, $prefix) === 0) {
+                $keyName = lcfirst(substr($methodName, strlen($prefix)));
+                return $keyName;
             }
         }
     
-        return lcfirst($keyName);
-    }    
+        throw new Exception("Unable to build message key name, method name: {$methodName}");
+    }     
 }
 
 if ($argc > 1) {

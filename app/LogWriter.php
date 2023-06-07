@@ -11,13 +11,30 @@ class LogWriter
     private $fileNamePreset = '';
     private $ownerKey = 0;
 
-    public function getKeyFromFields(string $key)
+    public function writeToOutput($content): void
+    {
+        $outputPath = LOGS_PATH.DIRECTORY_SEPARATOR.'output.txt';
+        file_put_contents($outputPath, $content);
+    }
+
+    public function getKeyFromFields(string $key): string
     {
         if (!isset($this->fields[$key])) {
-            throw new \Exception("Key {$key} not found in fields.");
+            throw new \Exception("Key {$key} not found in fields. Current fields: ".json_encode($this->fields, JSON_PRETTY_PRINT));
         }
 
         return $this->fields[$key];
+    }
+
+    public function assertFieldExists(... $keys): bool
+    {
+        foreach ($keys as $key) {
+            if (!isset($this->fields[$key])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function getFields(): array
