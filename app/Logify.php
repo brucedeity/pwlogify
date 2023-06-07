@@ -444,7 +444,7 @@ class Logify
         $this->getLogWriter()->logGeneralInfo('deleteFaction', $this->fields);
     }
 
-    private function processGetMoney()
+    private function processGetMoney(): void
     {
         if (!preg_match('/用户(\d+).*得到金钱(\d+)/', $this->getLogLine(), $matches)) 
             $this->throwInvalidLogLineException();
@@ -455,7 +455,7 @@ class Logify
         ]);
     }
 
-    private function pickupTeamMoney()
+    private function pickupTeamMoney(): void
     {
         if (!preg_match('/用户(\d+)组队拣起用户(\d+)丢弃的金钱(\d+)/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -467,7 +467,7 @@ class Logify
         ]);
     }
 
-    private function processPetEggHatch()
+    private function processPetEggHatch(): void
     {
         if (!preg_match('/用户(\d+)孵化了宠物蛋(\d+)/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -478,7 +478,7 @@ class Logify
         ]);
     }
 
-    private function processPetEggRestore()
+    private function processPetEggRestore(): void
     {
         if (!preg_match('/用户(\d+)还原了宠物蛋(\d+)/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -489,7 +489,7 @@ class Logify
         ]);
     }
 
-    private function processLevelUp()
+    private function processLevelUp(): void
     {
         if (!preg_match('/用户(\d+)升级到(\d+)级金钱(\d+),游戏时间(\d+:\d+:\d+)/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -502,7 +502,7 @@ class Logify
         ]);
     }
 
-    private function processChat()
+    private function processChat(): void
     {
         $patterns = [
             ['pattern' => '/Chat: src=(-?\d+) chl=(\d+) msg=([\w\+=\/]+)/', 'channel' => null],
@@ -526,7 +526,7 @@ class Logify
         }
     }
 
-    private function getChannelName($channelId)
+    private function getChannelName($channelId): string
     {
         $channelNames = [
             0 => 'Common',
@@ -539,13 +539,13 @@ class Logify
         return $channelNames[$channelId] ?? 'unknown';
     }
 
-    private function decodeBase64Message($base64Message)
+    private function decodeBase64Message($base64Message): string
     {
         $decodedMessage = base64_decode($base64Message);
         return mb_convert_encoding($decodedMessage, 'UTF-8', 'UTF-16LE');
     }
 
-    private function processCraftItem()
+    private function processCraftItem(): void
     {
         if (!preg_match('/用户(\d+)制造了(\d+)个(\d+), 配方(\d+),/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -569,7 +569,7 @@ class Logify
         ]);
     }
     
-    private function processPickupItem()
+    private function processPickupItem(): void
     {
         if (!preg_match('/用户(\d+)拣起(\d+)个(\d+)\[用户(\d+)丢弃\]/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -582,7 +582,7 @@ class Logify
         ]);
     }
 
-    private function processPurchaseFromAuction()
+    private function processPurchaseFromAuction(): void
     {
         if (!preg_match('/用户(\d+)在百宝阁购买(\d+)样物品，花费(\d+)点剩余(\d+)点/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -595,7 +595,7 @@ class Logify
         ]);
     }
 
-    private function processGMCommand()
+    private function processGMCommand(): void
     {
         if (!preg_match('/GM:用户(\d+)执行了内部命令(\d+)/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -606,7 +606,7 @@ class Logify
         ]);
     }
 
-    private function processObtainTitle()
+    private function processObtainTitle(): void
     {
         if (!preg_match('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -618,7 +618,7 @@ class Logify
         ]);
     }
 
-    private function processTask()
+    private function processTask(): void
     {
         $this->getFieldsFromFormatlog();
 
@@ -652,7 +652,7 @@ class Logify
         }
     }
 
-    private function processSendMail()
+    private function processSendMail(): void
     {
         $this->getFieldsFromFormatlog();
 
@@ -660,7 +660,7 @@ class Logify
             $this->throwInvalidLogLineException();
     }
         
-    private function processRoleLogin()
+    private function processRoleLogin(): void
     {
         $this->getFieldsFromFormatlog();
     
@@ -668,7 +668,7 @@ class Logify
             $this->throwInvalidLogLineException();
     }
     
-    private function processRoleLogout()
+    private function processRoleLogout(): void
     {
         $this->getFieldsFromFormatlog();
     
@@ -676,7 +676,7 @@ class Logify
             $this->throwInvalidLogLineException();
     }
 
-    private function processTrade()
+    private function processTrade(): void
     {
         if (!preg_match('/roleidA=(\d+):roleidB=(\d+):moneyA=(\d+):moneyB=(\d+):objectsA=([^:]*):objectsB=(.*)$/', $this->getLogLine(), $matches))
             $this->throwInvalidLogLineException();
@@ -713,7 +713,7 @@ class Logify
         $this->getLogWriter()->appendToLogFile('trade.json', $this->fields);
     }
 
-    private function parseTradeObjets(string $objects, array &$fields, string $itemsKey)
+    private function parseTradeObjets(string $objects, array &$fields, string $itemsKey): array
     {
         $items = [];
         $objects = explode(';', $objects);
@@ -743,7 +743,7 @@ class Logify
         );
     }
 
-    public function buildLogEvent()
+    public function buildLogEvent(): void
     {
         if (empty($this->getLogWriter()->getFields()))
             return;
