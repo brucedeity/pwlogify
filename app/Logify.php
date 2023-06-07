@@ -18,6 +18,11 @@ class Logify
         $this->logWriter = new LogWriter;
     }
 
+    public function setMethodName(string $methodName)
+    {
+        $this->methodName = $methodName;
+    }
+
     public function getBuildMessage(): bool
     {
         return $this->buildMessage;
@@ -33,16 +38,17 @@ class Logify
         return $this->logWriter;
     }
 
-    public function processLogLine()
+    public function processLogLine(): bool
     {
         foreach (Config::getLogPatterns() as $pattern => $methodName) {
             if (strpos($this->logLine, $pattern) !== false){
-                $this->methodName = $methodName;
 
-                $this->$methodName();
-                return;
+                $this->setMethodName($methodName);
+                return $this->$methodName();
             }
         }
+
+        return false;
     }
     
     private function getFieldsFromFormatlog()
@@ -717,7 +723,9 @@ class Logify
 
     public function buildLogEvent()
     {
-        $this->getLogWriter()->setOwner();
+        // if (empty($this->getLogWriter()->getFields()))
+        //     return;
+
         $this->getLogWriter()->logEvent($this->getMessageKeyName());
     }
 
@@ -742,7 +750,10 @@ class Logify
 if ($argc > 1) {
     $logify = new Logify;
     $logify->setLogLine($argv[1]);
-    $logify->processLogLine();
+
+    if ($logify->processLogLine() === false)
+        throw new Exception("Log line not processed: {$argv[1]}");
+
     $logify->buildLogEvent();
 }
 else {

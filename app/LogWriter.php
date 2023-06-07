@@ -71,6 +71,8 @@ class LogWriter
 
     public function logEvent(string $messageKey): void
     {
+        $this->setOwner();
+
         if (Config::messageKeyExists($messageKey))
             $this->buildMessageAndTimestamp($messageKey);
 
