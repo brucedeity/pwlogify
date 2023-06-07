@@ -28,6 +28,11 @@ class Logify
         $this->methodName = $methodName;
     }
 
+    public function getMethodName(): string
+    {
+        return $this->methodName;
+    }
+
     public function getBuildMessage(): bool
     {
         return $this->buildMessage;
@@ -746,7 +751,7 @@ class Logify
     public function buildLogEvent(): void
     {
         if (empty($this->getLogWriter()->getFields()))
-            throw new Exception('Unable to build '.$this->getMethodName().' log event, fields array is empty.');
+            throw new Exception('Unable to build '.$this->getMethodName().' log event, fields array is empty. Log line: '.$this->getLogLine());
 
         $this->getLogWriter()->logEvent($this->getMessageKeyName());
     }

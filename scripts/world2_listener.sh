@@ -6,7 +6,7 @@ logify_script="${script_dir}/../app/Logify.php"
 
 patterns=(
     "GM:"
-    "chat"
+    "chat :"
     "obtain title"
     "formatlog:sendmail"
     "formatlog:rolelogin"

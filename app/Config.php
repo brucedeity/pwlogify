@@ -8,7 +8,7 @@ class Config
     {
         return [
             'GM:' => 'processGMActions',
-            'chat' => 'processChat',
+            'chat :' => 'processChat',
             'obtain title' => 'processObtainTitle',
             'formatlog:sendmail' => 'processSendMail',
             'formatlog:rolelogin' => 'processRoleLogin',
