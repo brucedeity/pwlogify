@@ -746,7 +746,7 @@ class Logify
     public function buildLogEvent(): void
     {
         if (empty($this->getLogWriter()->getFields()))
-            return;
+            throw new Exception('Unable to build '.$this->getMethodName().' log event, fields array is empty.');
 
         $this->getLogWriter()->logEvent($this->getMessageKeyName());
     }

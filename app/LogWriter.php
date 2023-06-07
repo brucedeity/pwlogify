@@ -50,7 +50,7 @@ class LogWriter
         return $this->fileNamePreset;
     }
 
-    private function buildMessageAndTimestamp(string $messageKey)
+    private function buildMessageAndTimestamp(string $messageKey): string
     {
         $message = Config::getMessage($messageKey);
         $extraData = ['timestamp' => date('Y-m-d H:i:s')];
