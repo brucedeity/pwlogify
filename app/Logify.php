@@ -684,35 +684,49 @@ class Logify
             'roleid', 'taskid', 'type'
         ]);
 
+        $fields = $this->getLogWriter()->getFields();
+
         $type = lcfirst($this->getLogWriter()->getKeyFromFields('msg'));
 
-        $this->setMethodName($type);
-        $this->setBuildMessage(false);
-
-        if ($type == 'DeliverItem')
-        {
-            preg_match('/Item id = (\d+), Count = (\d+)/', $this->getLogLine(), $matches);
-
-            $this->getLogWriter()->appendToFields([
-                'itemid' => $matches[1],
-                'count' => $matches[2]
-            ]);
+        switch ($type) {
+            case 'deliverItem':
+                $matches = $this->getMatchesFromRegex('/Item id = (\d+), Count = (\d+)/');
             
-            $this->getLogWriter()->setFileName('receiveItemFromTask');
-        }
-        else if ($type == 'DeliverByAwardData')
-        {
-            preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->getLogLine(), $matches);
+                $this->getLogWriter()->setFields([
+                    'roleid' => $fields['roleid'],
+                    'itemid' => $matches[1],
+                    'count' => $matches[2]
+                ]);
                 
-            $this->getLogWriter()->appendToFields([
-                'success' => $matches[1],
-                'gold' => $matches[2],
-                'exp' => $matches[3],
-                'sp' => $matches[4],
-                'reputation' => $matches[5]
-            ]);
+                $this->getLogWriter()->setFileName('receiveItemFromTask');
+                $this->setMethodName($type);
 
-            $this->getLogWriter()->setFileName('receiveTaskReward');
+                break;
+            
+            case 'deliverByAwardData':
+                $matches = $this->getMatchesFromRegex('/gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/');
+                
+                $gold = $matches[1];
+                $exp = $matches[2];
+                $sp = $matches[3];
+                $reputation = $matches[4];
+
+                if ($gold == 0 && $exp == 0 && $sp == 0 && $reputation == 0)
+                    exit;
+
+                $this->getLogWriter()->setFields([
+                    'roleid' => $fields['roleid'],
+                    'taskid' => $fields['taskid'],
+                    'gold' => $gold,
+                    'exp' => $exp,
+                    'sp' => $sp,
+                    'reputation' => $reputation
+                ]);
+                
+                $this->getLogWriter()->setFileName('receiveTaskReward');
+                $this->setMethodName('receiveTaskReward');
+
+                break;
         }
     }
 
@@ -763,12 +777,7 @@ class Logify
         $methodName = $this->getMethodName();
 
         if (!$this->getBuildMessage()) {
-            // if (Config::messageKeyExists($methodName))
-            // {
-            //     return $methodName;
-            // }
-
-            return $methodName;
+            return null;
         }
     
         $prefixes = ['process', 'handle'];
@@ -779,8 +788,8 @@ class Logify
                 return $keyName;
             }
         }
-    
-        throw new Exception('Unable to build message key name, current method name is from type: '.gettype($methodName). ' value: '.json_encode($methodName));
+        
+        return $methodName;
     }     
 }
 

@@ -89,7 +89,7 @@ class Config
             'processStartTask' => 'The Role ID %d started the task ID %d (type %d)',
             'processGiveUpTask' => 'The Role ID %d gave up the task ID %d (type %d)',
             'receiveItemFromTask' => 'The Role ID %d received the item ID %d (%d unit(s)) (type %d) from the task ID %d',
-            'deliverByAwardData' => 'The Role ID %d completed the task ID %d (type %d) msg: %s, success = %d, gold = %d, exp = %d, sp = %d, reputation = %d',
+            'receiveTaskReward' => 'The Role ID %d completed the task ID %d and received as reward: gold = %d, exp = %d, sp = %d, reputation = %d',
             'levelUp' => 'The Role ID %d leveled up to level %d. Current money: %s. Playtime: %s.',
         ];
     }

@@ -86,21 +86,27 @@ class LogWriter
     private function buildMessageAndTimestamp(string $messageKey): ?string
     {
         $message = Config::getMessage($messageKey);
-
-        if (!$message)
+    
+        if (!$message) {
             return null;
-
-        $extraData = ['timestamp' => date('Y-m-d H:i:s')];
-
-        if ($message) {
-            $extraData['message'] = sprintf($message, ...array_values($this->getFields()));
         }
-
+    
+        $expectedCount = substr_count($message, '%');
+        $fieldValues = array_values($this->getFields());
+    
+        if (count($fieldValues) < $expectedCount)
+            throw new \Exception('Error: Insufficient inputs for message '.$messageKey.'. Expected '.$expectedCount.' inputs');
+    
+        $extraData = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'message' => vsprintf($message, $fieldValues)
+        ];
+    
         $this->appendToFields($extraData);
-
+    
         return $message;
     }
-
+    
     public function buildFileName(string $messageKey): string
     {
         if (!empty($this->getFileName()))
