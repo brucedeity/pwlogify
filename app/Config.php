@@ -86,9 +86,9 @@ class Config
             'dropEquipment' => 'The Role ID %d discarded his equipment of ID %d',
             'pickupItem' => 'The Role ID %d picked up %d unit(s) of item %d (discarded by role ID %d)',
             'purchaseFromAuction' => 'The Role ID %d purchased %d item(s) from gshop, spent %d unit(s) of cash, remaining balance: %d',
-            'processStartTask' => 'The Role ID %d started the task ID %d (type %d)',
-            'processGiveUpTask' => 'The Role ID %d gave up the task ID %d (type %d)',
-            'receiveItemFromTask' => 'The Role ID %d received the item ID %d (%d unit(s)) (type %d) from the task ID %d',
+            'startTask' => 'The Role ID %d started the task ID %d',
+            'giveUpTask' => 'The Role ID %d gave up the task ID %d',
+            'receiveItemFromTask' => 'The Role ID %d received %d unit(s) of the item ID %d from the task ID %d',
             'receiveTaskReward' => 'The Role ID %d completed the task ID %d and received as reward: gold = %d, exp = %d, sp = %d, reputation = %d',
             'levelUp' => 'The Role ID %d leveled up to level %d. Current money: %s. Playtime: %s.',
         ];

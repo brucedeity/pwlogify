@@ -95,7 +95,7 @@ class LogWriter
         $fieldValues = array_values($this->getFields());
     
         if (count($fieldValues) < $expectedCount)
-            throw new \Exception('Error: Insufficient inputs for message '.$messageKey.'. Expected '.$expectedCount.' inputs');
+            throw new \Exception('Error: Insufficient inputs for message '.$messageKey.'. Expected '.$expectedCount.' inputs, but only received ' . count($fieldValues));
     
         $extraData = [
             'timestamp' => date('Y-m-d H:i:s'),

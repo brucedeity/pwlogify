@@ -65,7 +65,15 @@ class Logify
     
     private function processGMActions(): void
     {
-        $matches = $this->getMatchesFromRegex('/GM:用户(\d+)/');
+        if (preg_match('/GM:用户(\d+)/', $this->getLogLine(), $matches)) {
+            $gmRoleId = $matches[1];
+        } 
+        else if (preg_match('/GM:(\d+)/', $this->getLogLine(), $matches)) {
+            $gmRoleId = $matches[1];
+        } 
+        else {
+            throw new Exception('Unable to handle GM actions because the log line does not match any of the expected patterns.');
+        }
     
         $gmActionsMethods = [
             '创建了' => 'handleCreateMonster',
@@ -348,8 +356,7 @@ class Logify
 
     private function processBuyItem(): void
     {
-        if (!preg_match('/用户(\d+).*从NPC购买了(\d+)个(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+).*从NPC购买了(\d+)个(\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -360,8 +367,7 @@ class Logify
 
     private function processSellItem(): void
     {
-        if (!preg_match('/用户(\d+).*卖店(\d+)个(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+).*卖店(\d+)个(\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -372,8 +378,7 @@ class Logify
 
     private function processSpConsume(): void
     {
-        if (!preg_match('/用户(\d+)消耗了sp (\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)消耗了sp (\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -383,8 +388,7 @@ class Logify
 
     private function processSkillLevelUp(): void
     {
-        if (!preg_match('/用户(\d+)技能(\d+)达到(\d+)级/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)技能(\d+)达到(\d+)级/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -395,7 +399,6 @@ class Logify
 
     private function processDie(): void
     {
-        // 2023-06-08 17:09:50 vps.server.com gamed: notice : formatlog:die:roleid=1030:type=4:attacker=-2146409492
         $this->getAndvalidateFormatLogFields([
             'roleid', 'type', 'attacker'
         ]);
@@ -678,24 +681,19 @@ class Logify
 
         $fields = $this->getLogWriter()->getFields();
 
-        $type = lcfirst($this->getLogWriter()->getKeyFromFields('msg'));
+        $type = $this->getLogWriter()->getKeyFromFields('msg');
+
+        $customNames = [
+            'DeliverItem' => 'receiveItemFromTask',
+            'GiveUpTask' => 'giveUpTask',
+            'DeliverByAwardData' => 'receiveTaskReward',
+            'CheckDeliverTask' => 'startTask',
+        ];
+
+        $customName = $customNames[$type] ?? null;
 
         switch ($type) {
-            case 'deliverItem':
-                $matches = $this->getMatchesFromRegex('/Item id = (\d+), Count = (\d+)/');
-            
-                $this->getLogWriter()->setFields([
-                    'roleid' => $fields['roleid'],
-                    'itemid' => $matches[1],
-                    'count' => $matches[2]
-                ]);
-                
-                $this->getLogWriter()->setFileName('receiveItemFromTask');
-                $this->setMethodName($type);
-
-                break;
-            
-            case 'deliverByAwardData':
+            case 'DeliverByAwardData':
                 $matches = $this->getMatchesFromRegex('/gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/');
                 
                 $gold = $matches[1];
@@ -715,11 +713,27 @@ class Logify
                     'reputation' => $reputation
                 ]);
                 
-                $this->getLogWriter()->setFileName('receiveTaskReward');
-                $this->setMethodName('receiveTaskReward');
-
                 break;
+            case 'DeliverItem':
+                $matches = $this->getMatchesFromRegex('/Item id = (\d+), Count = (\d+)/');
+            
+                $this->getLogWriter()->setFields([
+                    'roleid' => $fields['roleid'],
+                    'itemid' => $matches[1],
+                    'count' => $matches[2],
+                    'taskid' => $fields['taskid']
+                ]);
+            
+                break;
+            case 'GiveUpTask': break;
+            case 'CheckDeliverTask': break;
+            
+            default:
+                exit;
         }
+
+        $this->getLogWriter()->setFileName($customName);
+        $this->setMethodName($customName);
     }
 
     private function getFieldsFromFormatlog(): void
