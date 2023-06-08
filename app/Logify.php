@@ -536,8 +536,7 @@ class Logify
 
     private function processCraftItem(): void
     {
-        if (!preg_match('/用户(\d+)制造了(\d+)个(\d+), 配方(\d+),/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)制造了(\d+)个(\d+), 配方(\d+),/');
     
         $materialsString = substr($this->getLogLine(), strpos($this->getLogLine(), "消耗材料"));
         $materialMatches = [];
@@ -560,21 +559,19 @@ class Logify
     
     private function processPickupItem(): void
     {
-        if (!preg_match('/用户(\d+)拣起(\d+)个(\d+)\[用户(\d+)丢弃\]/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/用户(\d+)拣起(\d+)个(\d+)(?:\[用户(\d+)丢弃\])?/');
+    
         $this->getLogWriter()->setFields([
             'pickup_userid' => $matches[1],
             'itemcount' => $matches[2],
             'itemId' => $matches[3],
-            'discard_userid' => $matches[4]
+            'discard_userid' => isset($matches[4]) ? $matches[4] : null
         ]);
     }
 
     private function processPurchaseFromAuction(): void
     {
-        if (!preg_match('/用户(\d+)在百宝阁购买(\d+)样物品，花费(\d+)点剩余(\d+)点/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)在百宝阁购买(\d+)个(\d+),花费(\d+)点剩余(\d+)点/');
             
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -586,8 +583,7 @@ class Logify
 
     private function processObtainTitle(): void
     {
-        if (!preg_match('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -598,7 +594,6 @@ class Logify
 
     private function processSendMail(): void
     {
-        // 2023-06-08 16:59:45 vps.server.com gamedbd: notice : formatlog:sendmail:timestamp=28:src=1030:dst=1025:mid=0:size=14:money=0:item=0:count=0:pos=-1
         $this->getAndvalidateFormatLogFields([
             'timestamp', 'src', 'dst', 'mid', 'size', 'money', 'item', 'count', 'pos'
         ]);
@@ -608,7 +603,6 @@ class Logify
         
     private function processRoleLogin(): void
     {
-        // 2023-06-08 16:47:10 vps.server.com glinkd-1: notice : formatlog:rolelogin:userid=1024:roleid=1030:lineid=1:localsid=17
         $this->getAndvalidateFormatLogFields([
             'userid', 'roleid', 'lineid', 'localsid'
         ]);
@@ -616,7 +610,6 @@ class Logify
     
     private function processRoleLogout(): void
     {
-        // 2023-06-08 16:45:55 vps.server.com glinkd-1: notice : formatlog:rolelogout:userid=1024:roleid=1030:localsid=17:time=10550
         $this->getAndvalidateFormatLogFields([
             'userid', 'roleid', 'localsid', 'time'
         ]);
@@ -624,8 +617,7 @@ class Logify
 
     private function processTrade(): void
     {
-        if (!preg_match('/roleidA=(\d+):roleidB=(\d+):moneyA=(\d+):moneyB=(\d+):objectsA=([^:]*):objectsB=(.*)$/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/roleidA=(\d+):roleidB=(\d+):moneyA=(\d+):moneyB=(\d+):objectsA=([^:]*):objectsB=(.*)$/');
     
         $this->getLogWriter()->setFields([
             'roleA_id' => $matches[1],
