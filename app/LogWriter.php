@@ -8,8 +8,19 @@ class LogWriter
 {
     private $owner;
     private $fields = [];
+    private $fileName = '';
     private $fileNamePreset = '';
     private $ownerKey = 0;
+
+    public function setFileName(string $fileName): void
+    {
+        $this->fileName = $fileName;
+    }
+
+    public function getFileName(): string
+    {
+        return $this->fileName;
+    }
 
     public function writeToOutput($content): void
     {
@@ -57,6 +68,11 @@ class LogWriter
         return $this->ownerKey;
     }
 
+    public function setOwnerKey($key): void
+    {
+        $this->ownerKey = $key;
+    }
+
     public function setFileNamePreset(string $preset): void
     {
         $this->fileNamePreset = $preset;
@@ -67,9 +83,13 @@ class LogWriter
         return $this->fileNamePreset;
     }
 
-    private function buildMessageAndTimestamp(string $messageKey): string
+    private function buildMessageAndTimestamp(string $messageKey): ?string
     {
         $message = Config::getMessage($messageKey);
+
+        if (!$message)
+            return null;
+
         $extraData = ['timestamp' => date('Y-m-d H:i:s')];
 
         if ($message) {
@@ -83,16 +103,18 @@ class LogWriter
 
     public function buildFileName(string $messageKey): string
     {
+        if (!empty($this->getFileName()))
+        {
+            return $this->getFileName();
+        }
+
         return $this->getFilenamePreset() ? $this->getFilenamePreset().'_'.$messageKey : $messageKey;
     }
 
-    public function logEvent(string $messageKey): void
+    public function logEvent($messageKey): void
     {
         $this->setOwner();
-
-        if (Config::messageKeyExists($messageKey))
-            $this->buildMessageAndTimestamp($messageKey);
-
+        $this->buildMessageAndTimestamp($messageKey);
         $this->appendToLogFile($this->buildFileName($messageKey));
     }
 

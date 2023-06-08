@@ -18,32 +18,32 @@ class Logify
         $this->logWriter = new LogWriter;
     }
 
-    public function getLogLine(): string
+    private function getLogLine(): string
     {
         return $this->logLine;
     }
 
-    public function setMethodName(string $methodName): void
+    private function setMethodName(string $methodName): void
     {
         $this->methodName = $methodName;
     }
 
-    public function getMethodName(): string
+    private function getMethodName(): string
     {
         return $this->methodName;
     }
 
-    public function getBuildMessage(): bool
+    private function getBuildMessage(): bool
     {
         return $this->buildMessage;
     }
 
-    public function setBuildMessage(bool $status): void
+    private function setBuildMessage(bool $status): void
     {
         $this->buildMessage = $status;
     }
 
-    public function getLogWriter(): LogWriter
+    private function getLogWriter(): LogWriter
     {
         return $this->logWriter;
     }
@@ -63,25 +63,10 @@ class Logify
         return false;
     }
     
-    private function getFieldsFromFormatlog(): void
-    {
-        $matches = [];
-        preg_match_all('/(\w+)=([\d\w]+)/', $this->getLogLine(), $matches, PREG_SET_ORDER);
-
-        foreach ($matches as $match) {
-            if (count($match) == 3) {
-                $matches[$match[1]] = $match[2];
-            }
-        }
-
-        $this->getLogWriter()->setFields($matches);
-    }
-    
     private function processGMActions(): void
     {
-        if (!preg_match('/GM:(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/GM:用户(\d+)/');
+    
         $gmActionsMethods = [
             '创建了' => 'handleCreateMonster',
             '试图移动到玩家' => 'handleAttemptMoveToPlayer',
@@ -94,48 +79,59 @@ class Logify
             '切换了隐身状态' => 'handleToggleInvisibility',
             '丢出了怪物生成器' => 'handleDropMonsterSpawner',
             '用户断线了' => 'handlePlayerDisconnect',
+            '执行了内部命令' => 'handleCommand',
         ];
-
+    
         foreach ($gmActionsMethods as $pattern => $methodName) {
             if (strpos($this->getLogLine(), $pattern) !== false){
-
+    
                 $this->setMethodName($methodName);
                 $this->$methodName($matches[1]);
+    
                 return;
             }
         }
     }
 
+    private function handleCommand(): void
+    {
+        $matches = $this->getMatchesFromRegex('/GM:用户(\d+)执行了内部命令(\d+)/');
+
+        $this->getLogWriter()->setFields([
+            'roleId' => $matches[1],
+            'commandId' => $matches[2],
+        ]);
+
+        $this->getLogWriter()->setFileNamePreset('gm');
+    }
+
     private function handleStartActivity(int $gmRoleId): void
     {
-        if (!preg_match('/开启活动(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/开启活动(\d+)/');
+    
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'activityId' => $matches[1],
         ]);
-
+    
         $this->getLogWriter()->setFileNamePreset('gm');
     }
-
+    
     private function handleStopActivity(int $gmRoleId): void
     {
-        if (!preg_match('/关闭活动(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/关闭活动(\d+)/');
+    
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'activityId' => $matches[1],
         ]);
-
+    
         $this->getLogWriter()->setFileNamePreset('gm');
     }
-
+    
     private function handleToggleInvincibility(int $gmRoleId): void
     {
-        if (!preg_match('/切换了无敌状态\(([^)]+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/切换了无敌状态\(([^)]+)\)/');
     
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
@@ -144,11 +140,10 @@ class Logify
     
         $this->getLogWriter()->setFileNamePreset('gm');
     }    
-
+    
     private function handleToggleInvisibility(int $gmRoleId): void
     {
-        if (!preg_match('/切换了隐身状态\(([^)]+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/切换了隐身状态\(([^)]+)\)/');
     
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
@@ -157,38 +152,35 @@ class Logify
     
         $this->getLogWriter()->setFileNamePreset('gm');
     }    
-
+    
     private function handleDropMonsterSpawner(int $gmRoleId): void
     {
-        if (!preg_match('/丢出了怪物生成器(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/丢出了怪物生成器(\d+)/');
+    
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'monsterSpawnerId' => $matches[1],
         ]);
-
+    
         $this->getLogWriter()->setFileNamePreset('gm');
     }
-
+    
     private function handlePlayerDisconnect(int $gmRoleId): void
     {
-        if (!preg_match('/用户断线了\((\d+)\):(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/用户断线了\((\d+)\):(\d+)/');
+    
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'disconnectType' => $matches[1],
             'playerId' => $matches[2],
         ]);
-
+    
         $this->getLogWriter()->setFileNamePreset('gm');
     }
-
+    
     private function handleActivateTrigger(int $gmRoleId): void
     {
-        if (!preg_match('/激活了生成区域(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/激活了生成区域(\d+)/');
     
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
@@ -196,12 +188,11 @@ class Logify
         ]);
     
         $this->getLogWriter()->setFileNamePreset('gm');
-    }
+    }    
     
     private function handleCancelTrigger(int $gmRoleId): void
     {
-        if (!preg_match('/取消了生成区域(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/取消了生成区域(\d+)/');
     
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
@@ -213,24 +204,22 @@ class Logify
     
     private function handleCreateMonster(int $gmRoleId): void
     {
-        if (!preg_match('/创建了(\d+)个怪物(\d+)\((\d+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/创建了(\d+)个怪物(\d+)\((\d+)\)/');
+    
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'monsterCount' => $matches[1],
             'monsterType' => $matches[2],
             'monsterId' => $matches[3],
         ]);
-
+    
         $this->getLogWriter()->setFileNamePreset('gm');
     }
     
     private function handleAttemptMoveToPlayer(int $gmRoleId): void
     {
-        if (!preg_match('/试图移动到玩家(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/试图移动到玩家(\d+)/');
+    
         $this->getLogWriter()->setFields([
             'gmRoleId' => $gmRoleId,
             'playerId' => $matches[1],
@@ -238,12 +227,11 @@ class Logify
     
         $this->getLogWriter()->setFileNamePreset('gm');
     }
-    
+        
     private function handleMoveToPlayer(int $gmRoleId): void
     {
-        if(!preg_match('/移动到玩家(\d+) at position \((.+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/移动到玩家(\d+).*\((.+)\)/');
+    
         $position = explode(',', $matches[2]);
     
         $this->getLogWriter()->setFields([
@@ -259,8 +247,7 @@ class Logify
     
     private function handleMovePlayer(int $gmRoleId): void
     {
-        if(!preg_match('/将玩家(\d+)移动过来\((.+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/将玩家(\d+)移动过来\((.+)\)/');
     
         $position = explode(',', $matches[2]);
     
@@ -277,8 +264,7 @@ class Logify
 
     private function processMine(): void
     {
-        if (!preg_match('/用户(\d+)采集得到(\d+)个(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)采集得到(\d+)个(\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -289,8 +275,7 @@ class Logify
 
     private function processDropItem(): void
     {
-        if (!preg_match('/用户(\d+)丢弃包裹(\d+)个(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)丢弃包裹(\d+)个(\d+)/');
         
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -301,8 +286,7 @@ class Logify
 
     private function processDropEquipment(): void
     {
-        if (!preg_match('/用户(\d+)丢弃装备(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)丢弃装备(\d+)/');
     
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -312,8 +296,7 @@ class Logify
 
     private function processDiscardMoney(): void
     {
-        if (!preg_match('/用户(\d+)丢弃金钱(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)丢弃金钱(\d+)/');
     
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -323,8 +306,7 @@ class Logify
 
     private function processCreateParty(): void
     {
-        if (!preg_match('/用户(\d+)建立了队伍\((\d+),(\d+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)建立了队伍\((\d+),(\d+)\)/');
 
         $this->getLogWriter()->setFields([
             'creatorId' => $matches[1],
@@ -335,8 +317,7 @@ class Logify
 
     private function processjoinParty(): void
     {
-        if (!preg_match('/用户(\d+)成为队员\((\d+),(\d+)\)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)成为队员\((\d+),(\d+)\)/');
 
         $this->getLogWriter()->setFields([
             'userId' => $matches[1],
@@ -347,8 +328,7 @@ class Logify
 
     private function processSpendMoney(): void
     {
-        if (!preg_match('/用户(\d+)花掉金钱(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $this->matches = $this->getMatchesFromRegex('/用户(\d+)花掉金钱(\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -358,14 +338,13 @@ class Logify
 
     private function processPickupMoney(): void
     {
-        if (!preg_match('/拣起金钱(\d+)\W+(\w+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
+        $matches = $this->getMatchesFromRegex('/用户(\d+)拣起金钱(\d+)/');
+    
         $this->getLogWriter()->setFields([
-            'roleId' => $matches[2],
-            'amount' => $matches[1]
+            'roleId' => $matches[1],
+            'amount' => $matches[2]
         ]);
-    }
+    }       
 
     private function processBuyItem(): void
     {
@@ -414,15 +393,15 @@ class Logify
         ]);
     }
 
-    private function processRoleDie(): void
+    private function processDie(): void
     {
-        $this->getFieldsFromFormatlog();
-
-        if (!isset($this->fields['roleid']))
-            $this->throwInvalidLogLineException();
+        // 2023-06-08 17:09:50 vps.server.com gamed: notice : formatlog:die:roleid=1030:type=4:attacker=-2146409492
+        $this->getAndvalidateFormatLogFields([
+            'roleid', 'type', 'attacker'
+        ]);
     }
 
-    public function processFactionActions(): void
+    private function processFactionActions(): void
     {
         $factionActions = [
             'create' => 'processCreateFaction',
@@ -431,28 +410,37 @@ class Logify
 
         foreach ($factionActions as $pattern => $methodName) {
             if (strpos($this->getLogLine(), $pattern) !== false){
+
+                $this->setMethodName($methodName);
                 $this->$methodName();
-                $this->throwInvalidLogLineException();
+
+                break;
             }
         }
     }
 
-    public function processCreateFaction(): void
+    private function processCreateFaction(): void
     {
-        $this->getFieldsFromFormatlog();
+        $this->getAndvalidateFormatLogFields([
+            'type', 'roleid', 'factionid'
+        ]);
+
+        $this->getLogWriter()->setOwnerKey('roleid');
     }
 
-    public function processDeleteFaction(): void
+    private function processDeleteFaction(): void
     {
         $this->getFieldsFromFormatlog();
 
-        $this->getLogWriter()->logGeneralInfo('deleteFaction', $this->fields);
+        $this->getLogWriter()->logGeneralInfo('deleteFaction');
+
+        // Exit the script because we don't need "buildLogEvent" method to be called
+        exit;
     }
 
     private function processGetMoney(): void
     {
-        if (!preg_match('/用户(\d+).*得到金钱(\d+)/', $this->getLogLine(), $matches)) 
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+).*拣起金钱(\d+)/');
             
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -462,8 +450,7 @@ class Logify
 
     private function pickupTeamMoney(): void
     {
-        if (!preg_match('/用户(\d+)组队拣起用户(\d+)丢弃的金钱(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)组队拣起用户(\d+)丢弃的金钱(\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -474,8 +461,7 @@ class Logify
 
     private function processPetEggHatch(): void
     {
-        if (!preg_match('/用户(\d+)孵化了宠物蛋(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)孵化了宠物蛋(\d+)/');
 
         $this->getLogWriter()->setFields([
             'userId' => $matches[1],
@@ -485,8 +471,7 @@ class Logify
 
     private function processPetEggRestore(): void
     {
-        if (!preg_match('/用户(\d+)还原了宠物蛋(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)还原了宠物蛋(\d+)/');
 
         $this->getLogWriter()->setFields([
             'userId' => $matches[1],
@@ -496,8 +481,7 @@ class Logify
 
     private function processLevelUp(): void
     {
-        if (!preg_match('/用户(\d+)升级到(\d+)级金钱(\d+),游戏时间(\d+:\d+:\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
+        $matches = $this->getMatchesFromRegex('/用户(\d+)升级到(\d+)级金钱(\d+),游戏时间(\d+:\d+:\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -600,17 +584,6 @@ class Logify
         ]);
     }
 
-    private function processGMCommand(): void
-    {
-        if (!preg_match('/GM:用户(\d+)执行了内部命令(\d+)/', $this->getLogLine(), $matches))
-            $this->throwInvalidLogLineException();
-
-        $this->getLogWriter()->setFields([
-            'roleId' => $matches[1],
-            'commandId' => $matches[2],
-        ]);
-    }
-
     private function processObtainTitle(): void
     {
         if (!preg_match('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/', $this->getLogLine(), $matches))
@@ -623,61 +596,30 @@ class Logify
         ]);
     }
 
-    private function processTask(): void
-    {
-        $this->getAndvalidateFormatLogFields([
-            'roleid', 'taskid', 'type'
-        ]);
-
-        $type = lcfirst($this->getLogWriter()->getKeyFromFields('type'));
-
-        $this->setMethodName($type);
-
-        if ($type == 'DeliverItem')
-        {
-            preg_match('/Item id = (\d+), Count = (\d+)/', $this->getLogLine(), $matches);
-
-            $this->getLogWriter()->appendToFields([
-                'itemid' => $matches[1],
-                'count' => $matches[2]
-            ]);
-        }
-        else if ($type == 'DeliverByAwardData')
-        {
-            preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->getLogLine(), $matches);
-                
-            $this->getLogWriter()->appendToFields([
-                'success' => $matches[1],
-                'gold' => $matches[2],
-                'exp' => $matches[3],
-                'sp' => $matches[4],
-                'reputation' => $matches[5]
-            ]);
-        }
-    }
-
     private function processSendMail(): void
     {
-        $this->getFieldsFromFormatlog();
+        // 2023-06-08 16:59:45 vps.server.com gamedbd: notice : formatlog:sendmail:timestamp=28:src=1030:dst=1025:mid=0:size=14:money=0:item=0:count=0:pos=-1
+        $this->getAndvalidateFormatLogFields([
+            'timestamp', 'src', 'dst', 'mid', 'size', 'money', 'item', 'count', 'pos'
+        ]);
 
-        if (!isset($this->fields['src']))
-            $this->throwInvalidLogLineException();
+        $this->getLogWriter()->setOwnerKey('src');
     }
         
     private function processRoleLogin(): void
     {
-        $this->getFieldsFromFormatlog();
-    
-        if (!isset($this->fields['roleid']))
-            $this->throwInvalidLogLineException();
+        // 2023-06-08 16:47:10 vps.server.com glinkd-1: notice : formatlog:rolelogin:userid=1024:roleid=1030:lineid=1:localsid=17
+        $this->getAndvalidateFormatLogFields([
+            'userid', 'roleid', 'lineid', 'localsid'
+        ]);
     }
     
     private function processRoleLogout(): void
     {
-        $this->getFieldsFromFormatlog();
-    
-        if (!isset($this->fields['roleid']))
-            $this->throwInvalidLogLineException();
+        // 2023-06-08 16:45:55 vps.server.com glinkd-1: notice : formatlog:rolelogout:userid=1024:roleid=1030:localsid=17:time=10550
+        $this->getAndvalidateFormatLogFields([
+            'userid', 'roleid', 'localsid', 'time'
+        ]);
     }
 
     private function processTrade(): void
@@ -735,27 +677,77 @@ class Logify
 
         return $items;
     }
+
+    private function processTask(): void
+    {
+        $this->getAndvalidateFormatLogFields([
+            'roleid', 'taskid', 'type'
+        ]);
+
+        $type = lcfirst($this->getLogWriter()->getKeyFromFields('msg'));
+
+        $this->setMethodName($type);
+        $this->setBuildMessage(false);
+
+        if ($type == 'DeliverItem')
+        {
+            preg_match('/Item id = (\d+), Count = (\d+)/', $this->getLogLine(), $matches);
+
+            $this->getLogWriter()->appendToFields([
+                'itemid' => $matches[1],
+                'count' => $matches[2]
+            ]);
+            
+            $this->getLogWriter()->setFileName('receiveItemFromTask');
+        }
+        else if ($type == 'DeliverByAwardData')
+        {
+            preg_match('/success = (\d+), gold = (\d+), exp = (\d+), sp = (\d+), reputation = (\d+)/', $this->getLogLine(), $matches);
+                
+            $this->getLogWriter()->appendToFields([
+                'success' => $matches[1],
+                'gold' => $matches[2],
+                'exp' => $matches[3],
+                'sp' => $matches[4],
+                'reputation' => $matches[5]
+            ]);
+
+            $this->getLogWriter()->setFileName('receiveTaskReward');
+        }
+    }
+
+    private function getFieldsFromFormatlog(): void
+    {
+        $matches = [];
+        preg_match_all('/(\w+)=([^:]+)/', $this->getLogLine(), $matches, PREG_SET_ORDER);
+        $result = [];
     
-    public function getAndvalidateFormatLogFields(array $expectedFields): void
+        foreach ($matches as $match) {
+            if (count($match) == 3) {
+                $result[$match[1]] = $match[2];
+            }
+        }
+    
+        $this->getLogWriter()->setFields($result);
+    }
+    
+    private function getAndvalidateFormatLogFields(array $expectedKeys): void
     {
         $this->getFieldsFromFormatlog();
 
-        foreach ($expectedFields as $key => $value) {
+        foreach ($expectedKeys as $key) {
             if (!$this->getLogWriter()->assertFieldExists($key)) {
-                throw new Exception("Expected key: {$key} not found in fields. Current fields: ".json_encode($this->fields, JSON_PRETTY_PRINT));
+                throw new Exception("Expected key: {$key} not found in fields. Current fields: ".json_encode($this->getLogWriter()->getFields(), JSON_PRETTY_PRINT));
             }
         }
     }
 
-    public function throwInvalidLogLineException(): void
+    private function getMatchesFromRegex(string $regex): array
     {
-        throw new Exception(
-            sprintf(
-                'Unable to process the log line due to incorrect format. Method: %s, Log Line: %s', 
-                $this->getMethodName(), 
-                $this->getLogLine()
-            )
-        );
+        if (!preg_match($regex, $this->getLogLine(), $matches))
+            throw new Exception(sprintf('Unable to process the log line due to incorrect format. Method: %s, Log Line: %s', $this->getMethodName(), $this->getLogLine()));
+
+        return $matches;
     }
 
     public function buildLogEvent(): void
@@ -768,12 +760,18 @@ class Logify
 
     private function getMessageKeyName(): ?string
     {
+        $methodName = $this->getMethodName();
+
         if (!$this->getBuildMessage()) {
-            return null;
+            // if (Config::messageKeyExists($methodName))
+            // {
+            //     return $methodName;
+            // }
+
+            return $methodName;
         }
     
         $prefixes = ['process', 'handle'];
-        $methodName = $this->getMethodName();
     
         foreach ($prefixes as $prefix) {
             if (strpos($methodName, $prefix) === 0) {
@@ -782,7 +780,7 @@ class Logify
             }
         }
     
-        throw new Exception("Unable to build message key name, method name: {$methodName}");
+        throw new Exception('Unable to build message key name, current method name is from type: '.gettype($methodName). ' value: '.json_encode($methodName));
     }     
 }
 
