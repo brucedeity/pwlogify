@@ -336,7 +336,7 @@ class Logify
 
     private function processSpendMoney(): void
     {
-        $this->matches = $this->getMatchesFromRegex('/用户(\d+)花掉金钱(\d+)/');
+        $matches = $this->getMatchesFromRegex('/用户(\d+)花掉金钱(\d+)/');
 
         $this->getLogWriter()->setFields([
             'roleId' => $matches[1],
@@ -409,18 +409,21 @@ class Logify
         $factionActions = [
             'create' => 'processCreateFaction',
             'delete' => 'processDeleteFaction',
+            'upgradefaction' => 'processUpgradeFaction',
+            'deleterole' => 'processDeleteRoleFromFaction',
+            'join' => 'processJoinFaction',
+            'promote' => 'processPromoteRoleInFaction',
+            'leave' => 'processLeaveFaction'
         ];
-
+    
         foreach ($factionActions as $pattern => $methodName) {
-            if (strpos($this->getLogLine(), $pattern) !== false){
-
+            if (strpos($this->getLogLine(), $pattern) !== false) {
                 $this->setMethodName($methodName);
                 $this->$methodName();
-
                 break;
             }
         }
-    }
+    }    
 
     private function processCreateFaction(): void
     {
@@ -431,13 +434,56 @@ class Logify
         $this->getLogWriter()->setOwnerKey('roleid');
     }
 
+    private function processUpgradeFaction(): void
+    {
+        $this->getAndValidateFormatLogFields([
+            'factionid', 'master', 'money', 'level'
+        ]);
+
+        $this->getLogWriter()->setOwnerKey('master');
+    }
+
+    private function processDeleteRoleFromFaction(): void
+    {
+        $this->getAndValidateFormatLogFields([
+            'roleid', 'factionid', 'role'
+        ]);
+
+        $this->getLogWriter()->setOwnerKey('roleid');
+    }
+
+    private function processJoinFaction(): void
+    {
+        $this->getAndValidateFormatLogFields([
+            'roleid', 'factionid'
+        ]);
+
+        $this->getLogWriter()->setOwnerKey('roleid');
+    }
+
+    private function processPromoteRoleInFaction(): void
+    {
+        $this->getAndValidateFormatLogFields([
+            'superior', 'roleid', 'factionid', 'role'
+        ]);
+
+        $this->getLogWriter()->setOwnerKey('roleid');
+    }
+
+    private function processLeaveFaction(): void
+    {
+        $this->getAndValidateFormatLogFields([
+            'roleid', 'factionid', 'role'
+        ]);
+
+        $this->getLogWriter()->setOwnerKey('roleid');
+    }
+
     private function processDeleteFaction(): void
     {
         $this->getFieldsFromFormatlog();
-
         $this->getLogWriter()->logGeneralInfo('deleteFaction');
 
-        // Exit the script because we don't need "buildLogEvent" method to be called
         exit;
     }
 
@@ -572,18 +618,6 @@ class Logify
         ]);
     }
 
-    private function processPurchaseFromAuction(): void
-    {
-        $matches = $this->getMatchesFromRegex('/用户(\d+)在百宝阁购买(\d+)个(\d+),花费(\d+)点剩余(\d+)点/');
-            
-        $this->getLogWriter()->setFields([
-            'roleId' => $matches[1],
-            'itemcount' => $matches[2],
-            'cost' => $matches[3] / 100,
-            'balance' => $matches[4] / 100
-        ]);
-    }
-
     private function processObtainTitle(): void
     {
         $matches = $this->getMatchesFromRegex('/roleid:(\d+) obtain title\[(\d+)\] time\[(\d+)\]/');
@@ -602,6 +636,14 @@ class Logify
         ]);
 
         $this->getLogWriter()->setOwnerKey('src');
+    }
+
+    private function processGShopTrade(): void
+    {
+        $this->getAndValidateFormatLogFields([
+            'userid', 'db_magic_number', 'order_id', 'item_id', 'expire',
+            'item_count', 'cash_need', 'cash_left', 'guid1', 'guid2'
+        ]);
     }
         
     private function processRoleLogin(): void
@@ -804,7 +846,7 @@ if ($argc > 1) {
     $logify->setLogLine($argv[1]);
 
     if ($logify->processLogLine() === false)
-        throw new Exception("Log line not processed: {$argv[1]}");
+        throw new Exception("Log line not processed because it didntt match any pattern : {$argv[1]}");
 
     $logify->buildLogEvent();
 }

@@ -17,6 +17,7 @@ class Config
             'formatlog:task' => 'processTask',
             'formatlog:die' => 'processDie',
             'formatlog:faction' => 'processFactionActions',
+            'formatlog:gshop_trade' => 'processGShopTrade',
             '建立了队伍' => 'processCreateParty',
             '成为队员' => 'processJoinParty',
             '丢弃包裹' => 'processDropItem',
@@ -27,7 +28,6 @@ class Config
             '卖店' => 'processSellItem',
             '得到金钱' => 'processGetMoney',
             '拣起' => 'processPickupItem',
-            '在百宝阁购买' => 'processPurchaseFromAuction',
             '升级到' => 'processLevelUp',
             '花掉金钱' => 'processSpendMoney',
             '消耗了sp' => 'processSpConsume',
@@ -44,15 +44,18 @@ class Config
     public static function getMessages(): array
     {
         return [
-            'DeliverItem' => '',
-            'DeliverByAwardData' => '',
+            'upgradeFaction' => 'Faction with ID %d was upgraded by the master role %d. Money: %d, Level: %d',
+            'deleteRoleFromFaction' => 'Role with ID %d was deleted from Faction ID %d. Role: %d',
+            'joinFaction' => '(Type: %s) The Role ID %d joined the Faction ID %d',
+            'promoteRoleInFaction' => 'Role with ID %d in Faction ID %d was promoted by the superior role %d. Role: %d',
+            'leaveFaction' => '(Type: %s) The Role ID %d just left the Faction ID %d, his position was: %d',
             'pickupTeamMoney' => 'Role ID %d picked up money (%d) dropped by Role ID %d they both were in a Party.',
             'deleteFaction' => '(Action type: %s) The faction of ID %d was deleted.',
             'createFaction' => '(Action type: %s) The Role ID %d just created a new faction (faction ID: %d).',
             'createParty' => 'The Role ID %d created team with ID %d (Type: %d)',
             'joinParty' => 'The Role ID %d joined team with ID %d as member %d',
-            'petHatch' => 'The Role ID %d hatched the pet egg ID %d.',
-            'petRestore' => 'The Role ID %d restored a pet and received the pet egg ID %d.',
+            'petEggHatch' => 'The Role ID %d hatched the pet egg ID %d.',
+            'petEggRestore' => 'The Role ID %d restored a pet and received the pet egg ID %d.',
             'startActivity' => 'GM %d started the activity %d.',
             'stopActivity' => 'GM %d stopped the activity %d.',
             'toggleInvincibility' => 'GM %d toggled invincibility state. Current state => %d.',
@@ -91,6 +94,7 @@ class Config
             'receiveItemFromTask' => 'The Role ID %d received %d unit(s) of the item ID %d from the task ID %d',
             'receiveTaskReward' => 'The Role ID %d completed the task ID %d and received as reward: gold = %d, exp = %d, sp = %d, reputation = %d',
             'levelUp' => 'The Role ID %d leveled up to level %d. Current money: %s. Playtime: %s.',
+            'gShopTrade' => 'User ID %d performed a trade with the following details: Magic Number: %d, Order ID: %d, Item ID: %d, Expire: %d, Item Count: %d, Cash Needed: %d, Cash Left: %d, GUID 1: %d, GUID 2: %d',
         ];
     }
 
