@@ -18,6 +18,7 @@ class Config
             'formatlog:die' => 'processDie',
             'formatlog:faction' => 'processFactionActions',
             'formatlog:gshop_trade' => 'processGShopTrade',
+            'formatlog:upgradefaction' => 'processUpgradeFaction',
             '建立了队伍' => 'processCreateParty',
             '成为队员' => 'processJoinParty',
             '丢弃包裹' => 'processDropItem',
@@ -45,12 +46,12 @@ class Config
     {
         return [
             'upgradeFaction' => 'Faction with ID %d was upgraded by the master role %d. Money: %d, Level: %d',
-            'deleteRoleFromFaction' => 'Role with ID %d was deleted from Faction ID %d. Role: %d',
+            'deleteRoleFromFaction' => '(Type: %s) Role with ID %d was deleted from Faction ID %d. Role: %d',
             'joinFaction' => '(Type: %s) The Role ID %d joined the Faction ID %d',
-            'promoteRoleInFaction' => 'Role with ID %d in Faction ID %d was promoted by the superior role %d. Role: %d',
+            'promoteRoleInFaction' => '(Type: %s) The Role ID %d was promoted by his superior (ID %d) in Faction ID %d. New position: %d',
             'leaveFaction' => '(Type: %s) The Role ID %d just left the Faction ID %d, his position was: %d',
             'pickupTeamMoney' => 'Role ID %d picked up money (%d) dropped by Role ID %d they both were in a Party.',
-            'deleteFaction' => '(Action type: %s) The faction of ID %d was deleted.',
+            'deleteFaction' => '(Action type: %s) An attempt to delete the faction ID %d was detected!',
             'createFaction' => '(Action type: %s) The Role ID %d just created a new faction (faction ID: %d).',
             'createParty' => 'The Role ID %d created team with ID %d (Type: %d)',
             'joinParty' => 'The Role ID %d joined team with ID %d as member %d',

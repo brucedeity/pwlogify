@@ -409,7 +409,6 @@ class Logify
         $factionActions = [
             'create' => 'processCreateFaction',
             'delete' => 'processDeleteFaction',
-            'upgradefaction' => 'processUpgradeFaction',
             'deleterole' => 'processDeleteRoleFromFaction',
             'join' => 'processJoinFaction',
             'promote' => 'processPromoteRoleInFaction',
@@ -846,7 +845,7 @@ if ($argc > 1) {
     $logify->setLogLine($argv[1]);
 
     if ($logify->processLogLine() === false)
-        throw new Exception("Log line not processed because it didntt match any pattern : {$argv[1]}");
+        throw new Exception("Log line not processed because it didn't match any pattern : {$argv[1]}");
 
     $logify->buildLogEvent();
 }

@@ -16,6 +16,7 @@ patterns=(
     "formatlog:die"
     "formatlog:faction"
     "formatlog:gshop_trade"
+    "formatlog:upgradefaction"
     "建立了队伍"
     "成为队员"
     "丢弃包裹"
